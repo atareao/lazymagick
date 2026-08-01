@@ -564,12 +564,12 @@ stages = [{ flags = ["-resize", "50%"] }]
     // ----- load_builtin ---------------------------------------------------
 
     #[test]
-    fn load_builtin_returns_all_11_recipes() {
+    fn load_builtin_returns_all_26_recipes() {
         let recipes = load_builtin();
         assert_eq!(
             recipes.len(),
-            11,
-            "expected 11 built-in recipes (including jpeg 75)"
+            26,
+            "expected 26 built-in recipes (11 original + 15 new)"
         );
     }
 

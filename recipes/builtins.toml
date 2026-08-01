@@ -1,3 +1,150 @@
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# NEW BASIC RECIPES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[[recipe]]
+category = "Adjust"
+name = "auto-orient"
+description = "Auto-rotate and flip based on EXIF orientation, then strip orientation metadata"
+tags = ["orient", "exif", "rotate"]
+output_ext = "auto"
+stages = [{ flags = ["-auto-orient", "-strip"] }]
+
+[[recipe]]
+category = "Resize"
+name = "fit within"
+description = "Shrink to fit within 1920×1080, only if larger (use \">\" geometry modifier)"
+tags = ["resize", "scale", "fit"]
+output_ext = "auto"
+stages = [{ flags = ["-strip", "-resize", "1920x1080>"] }]
+
+[[recipe]]
+category = "Resize"
+name = "crop center"
+description = "Crop a 800×800 square from the center of the image"
+tags = ["crop", "cut", "square"]
+output_ext = "auto"
+stages = [{ flags = ["-gravity", "center", "-crop", "800x800+0+0", "+repage"] }]
+
+[[recipe]]
+category = "Convert"
+name = "convert"
+description = "Pure format conversion without any transformations — just change the container"
+tags = ["convert", "format"]
+output_ext = "auto"
+stages = [{ flags = [] }]
+
+[recipe.formats]
+jpeg = ["-quality", "92"]
+png = []
+webp = ["-quality", "85"]
+avif = ["-quality", "60"]
+jxl = ["-quality", "85"]
+
+[[recipe]]
+category = "Adjust"
+name = "normalize"
+description = "Auto-level colours: stretch contrast to full range, remove colour cast"
+tags = ["color", "contrast", "auto"]
+output_ext = "auto"
+stages = [{ flags = ["-normalize"] }]
+
+[[recipe]]
+category = "Optimize"
+name = "compress"
+description = "Aggressive web-optimised compression: strip metadata + quality 80 with chroma subsampling"
+tags = ["compress", "optimize", "web"]
+output_ext = "auto"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+jpeg = ["-quality", "80", "-sampling-factor", "4:2:0"]
+webp = ["-quality", "80"]
+avif = ["-quality", "50", "-effort", "6"]
+png = ["-quality", "80"]
+jxl = ["-quality", "75"]
+
+[[recipe]]
+category = "Optimize"
+name = "reduce palette"
+description = "Reduce to 256 colours with 8-bit depth — creates indexed PNG"
+tags = ["palette", "colors", "indexed", "gif"]
+output_ext = "png"
+stages = [{ flags = ["-colors", "256", "-depth", "8"] }]
+
+[recipe.formats]
+png = ["-colors", "256", "-depth", "8"]
+gif = ["-colors", "256"]
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# NEW ADVANCED / EFFECT RECIPES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[[recipe]]
+category = "Filter"
+name = "sharpen"
+description = "Unsharp mask sharpening (radius 0, sigma 1.0)"
+tags = ["sharpen", "unsharp", "detail"]
+output_ext = "auto"
+stages = [{ flags = ["-sharpen", "0x1.0"] }]
+
+[[recipe]]
+category = "Filter"
+name = "blur"
+description = "Gaussian blur with sigma 3 — softens the image"
+tags = ["blur", "gaussian", "soften"]
+output_ext = "auto"
+stages = [{ flags = ["-blur", "0x3"] }]
+
+[[recipe]]
+category = "Decor"
+name = "border"
+description = "Add a 10px solid black border around the image"
+tags = ["border", "frame", "outline"]
+output_ext = "auto"
+stages = [{ flags = ["-bordercolor", "black", "-border", "10x10"] }]
+
+[[recipe]]
+category = "Decor"
+name = "shadow"
+description = "Add a drop shadow effect (opacity 80%, offset 5+5, blur radius 5)"
+tags = ["shadow", "effect", "3d"]
+output_ext = "auto"
+stages = [{ flags = ["-background", "black", "-shadow", "80x5+5+5", "+repage"] }]
+
+[[recipe]]
+category = "Decor"
+name = "watermark"
+description = "Overlay a text watermark at the bottom-right corner"
+tags = ["watermark", "text", "label"]
+output_ext = "auto"
+stages = [{ flags = ["-font", "Helvetica", "-pointsize", "48", "-fill", "white", "-gravity", "southeast", "-annotate", "+20+20", "© 2025"] }]
+
+[[recipe]]
+category = "Color"
+name = "sepia"
+description = "Apply a sepia tone effect for a vintage/retro look"
+tags = ["sepia", "vintage", "retro", "tone"]
+output_ext = "auto"
+stages = [{ flags = ["-sepia-tone", "80%"] }]
+
+[[recipe]]
+category = "Filter"
+name = "sketch"
+description = "Pencil sketch / drawing effect (radius 0, sigma 10, angle 120°)"
+tags = ["sketch", "drawing", "pencil", "art"]
+output_ext = "auto"
+stages = [{ flags = ["-sketch", "0x10+120"] }]
+
+[[recipe]]
+category = "Optimize"
+name = "trim"
+description = "Auto-crop solid-colour borders from the edges of the image"
+tags = ["trim", "crop", "border", "auto"]
+output_ext = "auto"
+stages = [{ flags = ["-trim", "+repage"] }]
+
 [[recipe]]
 category = "Convert"
 name = "avif 50"
