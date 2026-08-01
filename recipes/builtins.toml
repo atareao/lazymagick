@@ -1,0 +1,112 @@
+[[recipe]]
+category = "Convert"
+name = "avif 50"
+description = "Convert to AVIF with quality 50, strip metadata"
+tags = ["avif", "convert", "lossy"]
+output_ext = "avif"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+avif = ["-quality", "50", "-effort", "5"]
+webp = ["-quality", "85"]
+jpeg = ["-quality", "90"]
+
+[[recipe]]
+category = "Color"
+name = "grayscale"
+description = "Convert to grayscale"
+tags = ["color", "grayscale"]
+output_ext = "auto"
+stages = [{ flags = ["-colorspace", "Gray"] }]
+
+[[recipe]]
+category = "Convert"
+name = "jpeg 75"
+description = "Convert to JPEG with quality 75"
+tags = ["jpeg", "convert", "lossy"]
+output_ext = "jpg"
+stages = [{ flags = ["-strip", "-interlace", "Plane", "-quality", "75"] }]
+
+[recipe.formats]
+webp = ["-quality", "75"]
+png = ["-quality", "75"]
+
+[[recipe]]
+category = "Convert"
+name = "jpeg 90"
+description = "High-quality JPEG conversion with interlacing"
+tags = ["jpeg", "convert", "lossy"]
+output_ext = "jpg"
+stages = [{ flags = ["-strip", "-interlace", "Plane", "-quality", "90"] }]
+
+[recipe.formats]
+png = []
+webp = ["-quality", "90"]
+
+[[recipe]]
+category = "Convert"
+name = "jpeg xl"
+description = "Convert to JPEG XL — next-gen compression"
+tags = ["jxl", "convert", "lossy"]
+output_ext = "jxl"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+jxl = ["-quality", "80", "-effort", "5"]
+webp = ["-quality", "85"]
+png = []
+
+[[recipe]]
+category = "Optimize"
+name = "png optimize"
+description = "Optimize PNG with stripping and filtering"
+tags = ["png", "optimize"]
+output_ext = "png"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+png = ["-quality", "95"]
+
+[[recipe]]
+category = "Resize"
+name = "resize 1920w"
+description = "Resize to 1920px wide, maintain aspect ratio"
+tags = ["resize", "scale"]
+output_ext = "auto"
+stages = [{ flags = ["-resize", "1920x"] }]
+
+[[recipe]]
+category = "Resize"
+name = "resize 50%"
+description = "Scale to 50% of original dimensions"
+tags = ["resize", "scale"]
+output_ext = "auto"
+stages = [{ flags = ["-resize", "50%"] }]
+
+[[recipe]]
+category = "Optimize"
+name = "strip"
+description = "Strip all metadata and profiles"
+tags = ["strip", "metadata", "clean"]
+output_ext = "auto"
+stages = [{ flags = ["-strip"] }]
+
+[[recipe]]
+category = "Resize"
+name = "thumbnail"
+description = "Generate a 300x300 thumbnail with adaptive resize"
+tags = ["thumbnail", "resize"]
+output_ext = "auto"
+stages = [{ flags = ["-thumbnail", "300x300^", "-gravity", "center", "-extent", "300x300"] }]
+
+[[recipe]]
+category = "Convert"
+name = "webp 85"
+description = "Convert to WebP with quality 85"
+tags = ["webp", "convert", "lossy"]
+output_ext = "webp"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+webp = ["-quality", "85"]
+avif = ["-quality", "50"]
