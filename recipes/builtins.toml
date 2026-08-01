@@ -257,3 +257,106 @@ stages = [{ flags = ["-strip"] }]
 [recipe.formats]
 webp = ["-quality", "85"]
 avif = ["-quality", "50"]
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# INSTAGRAM-STYLE FILTERS
+# Approximaciones de los filtros clásicos de Instagram
+# usando operadores nativos de ImageMagick (-modulate,
+# -colorize, -sigmoidal-contrast, -vignette, etc.)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[[recipe]]
+category = "Filter"
+name = "clarendon"
+description = "Instagram Clarendon: boosted contrast, cool shadows, vibrant midtones — el filtro más icónico"
+tags = ["instagram", "clarendon", "contrast", "cool"]
+output_ext = "auto"
+stages = [{ flags = ["-sigmoidal-contrast", "6,50%", "-modulate", "100,90,105", "-auto-level"] }]
+
+[[recipe]]
+category = "Filter"
+name = "lo-fi"
+description = "Instagram Lo-Fi: alto contraste, saturado, con viñeta oscura — estilo retro intenso"
+tags = ["instagram", "lofi", "contrast", "vignette"]
+output_ext = "auto"
+stages = [{ flags = ["-sigmoidal-contrast", "8,50%", "-vignette", "28x20+15+5"] }]
+
+[[recipe]]
+category = "Filter"
+name = "valencia"
+description = "Instagram Valencia: cálido, desvaído, toque dorado — aspecto vintage suave"
+tags = ["instagram", "valencia", "warm", "faded"]
+output_ext = "auto"
+stages = [{ flags = ["-modulate", "110,70,100", "-fill", "#d4a017", "-colorize", "5%", "-sigmoidal-contrast", "3,50%"] }]
+
+[[recipe]]
+category = "Filter"
+name = "xpro ii"
+description = "Instagram X-Pro II: alto contraste, dominante naranja, viñeta fuerte — look analógico cross-processed"
+tags = ["instagram", "xpro", "contrast", "warm", "vignette"]
+output_ext = "auto"
+stages = [{ flags = ["-sigmoidal-contrast", "12,50%", "-fill", "#e07000", "-colorize", "8%", "-vignette", "35x25+20+10"] }]
+
+[[recipe]]
+category = "Filter"
+name = "nashville"
+description = "Instagram Nashville: cálido con tinte rosado suave y realce de sombras — look pastel"
+tags = ["instagram", "nashville", "warm", "pink", "pastel"]
+output_ext = "auto"
+stages = [{ flags = ["-modulate", "115,50,105", "-fill", "#ffb3ba", "-colorize", "8%", "-level", "5%,95%"] }]
+
+[[recipe]]
+category = "Filter"
+name = "walden"
+description = "Instagram Walden: frío, desaturado, tinte azul pálido — aspecto sereno y etéreo"
+tags = ["instagram", "walden", "cool", "muted", "blue"]
+output_ext = "auto"
+stages = [{ flags = ["-modulate", "100,50,110", "-fill", "#87ceeb", "-colorize", "5%"] }]
+
+[[recipe]]
+category = "Filter"
+name = "toaster"
+description = "Instagram Toaster: centro iluminado, bordes oscuros, destellos naranja-cobre"
+tags = ["instagram", "toaster", "warm", "vignette", "copper"]
+output_ext = "auto"
+stages = [{ flags = ["-fill", "#cc5500", "-colorize", "10%", "-vignette", "20x15+5+5", "-modulate", "105,90,100"] }]
+
+[[recipe]]
+category = "Filter"
+name = "earlybird"
+description = "Instagram Earlybird: vintage, sepia suave, bordes oscuros — foto de los años 70"
+tags = ["instagram", "earlybird", "vintage", "warm", "sepia"]
+output_ext = "auto"
+stages = [{ flags = ["-fill", "#8b4513", "-colorize", "8%", "-sepia-tone", "70%", "-vignette", "30x25+15+10"] }]
+
+[[recipe]]
+category = "Filter"
+name = "gingham"
+description = "Instagram Gingham: lavado, baja saturación, tinte azul frío en sombras — look desgastado"
+tags = ["instagram", "gingham", "muted", "cool", "faded"]
+output_ext = "auto"
+stages = [{ flags = ["-modulate", "100,60,105", "-fill", "#b0c4de", "-colorize", "5%", "-brightness-contrast", "-5,-10"] }]
+
+[[recipe]]
+category = "Filter"
+name = "willow"
+description = "Instagram Willow: monocromático con tinte púrpura, alto contraste — elegante y dramático"
+tags = ["instagram", "willow", "mono", "purple", "dramatic"]
+output_ext = "auto"
+stages = [{ flags = ["-colorspace", "Gray", "-fill", "#4b0082", "-colorize", "15%", "-sigmoidal-contrast", "8,50%"] }]
+
+[[recipe]]
+category = "Filter"
+name = "amaro"
+description = "Instagram Amaro: dorado suave, centro más brillante, bordes ligeramente más oscuros"
+tags = ["instagram", "amaro", "warm", "soft", "golden"]
+output_ext = "auto"
+stages = [{ flags = ["-modulate", "105,85,100", "-fill", "#ffd700", "-colorize", "3%", "-vignette", "25x20+10+5"] }]
+
+[[recipe]]
+category = "Filter"
+name = "inkwell"
+description = "Instagram Inkwell: blanco y negro puro con alto contraste — clásico atemporal"
+tags = ["instagram", "inkwell", "bw", "mono", "contrast"]
+output_ext = "auto"
+stages = [{ flags = ["-colorspace", "Gray", "-sigmoidal-contrast", "10,50%"] }]
