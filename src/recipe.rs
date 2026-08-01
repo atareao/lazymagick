@@ -564,12 +564,12 @@ stages = [{ flags = ["-resize", "50%"] }]
     // ----- load_builtin ---------------------------------------------------
 
     #[test]
-    fn load_builtin_returns_all_38_recipes() {
+    fn load_builtin_returns_all_42_recipes() {
         let recipes = load_builtin();
         assert_eq!(
             recipes.len(),
-            38,
-            "expected 38 built-in recipes (26 original + 12 Instagram filters)"
+            42,
+            "expected 42 built-in recipes (38 + 4 weight reduction)"
         );
     }
 

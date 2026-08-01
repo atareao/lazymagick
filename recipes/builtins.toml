@@ -360,3 +360,62 @@ description = "Instagram Inkwell: blanco y negro puro con alto contraste — cl�
 tags = ["instagram", "inkwell", "bw", "mono", "contrast"]
 output_ext = "auto"
 stages = [{ flags = ["-colorspace", "Gray", "-sigmoidal-contrast", "10,50%"] }]
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# WEIGHT REDUCTION — COMPRESSION LEVELS
+# De menos a más agresiva: ligera (casi sin pérdida),
+# media (buena compresión), agresiva (máxima reducción)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[[recipe]]
+category = "Compress"
+name = "weight light"
+description = "Compresión ligera: strip metadata, JPEG calidad 92 — casi sin pérdida visible"
+tags = ["compress", "light", "web", "strip"]
+output_ext = "auto"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+jpeg = ["-quality", "92"]
+webp = ["-quality", "92"]
+avif = ["-quality", "80"]
+png = ["-quality", "92"]
+jxl = ["-quality", "92"]
+
+[[recipe]]
+category = "Compress"
+name = "weight medium"
+description = "Compresión media: strip, JPEG calidad 75, chroma 4:2:0 — ~50-70% de reducción"
+tags = ["compress", "medium", "web", "strip"]
+output_ext = "auto"
+stages = [{ flags = ["-strip"] }]
+
+[recipe.formats]
+jpeg = ["-quality", "75", "-sampling-factor", "4:2:0"]
+webp = ["-quality", "75"]
+avif = ["-quality", "60", "-effort", "4"]
+png = ["-quality", "75"]
+jxl = ["-quality", "70"]
+
+[[recipe]]
+category = "Compress"
+name = "weight aggressive"
+description = "Compresión agresiva: strip, JPEG calidad 50, chroma 4:2:0, paleta 256 colores, resize 1920px — máxima reducción"
+tags = ["compress", "aggressive", "web", "strip", "palette"]
+output_ext = "auto"
+stages = [{ flags = ["-strip", "-resize", "1920x>", "-colors", "256"] }]
+
+[recipe.formats]
+jpeg = ["-quality", "50", "-sampling-factor", "4:2:0"]
+webp = ["-quality", "50"]
+avif = ["-quality", "30", "-effort", "6"]
+png = ["-quality", "50"]
+jxl = ["-quality", "50"]
+
+[[recipe]]
+category = "Convert"
+name = "png to jpg"
+description = "PNG → JPG con paleta 256 colores y calidad 75 — tu workflow actual para reducir fotos"
+tags = ["png", "jpg", "convert", "palette", "256"]
+output_ext = "jpg"
+stages = [{ flags = ["-strip", "-colors", "256", "-quality", "75"] }]
