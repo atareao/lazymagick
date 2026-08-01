@@ -32,12 +32,15 @@ pub fn render(frame: &mut Frame, app: &App) {
         cursor: app.recipe_cursor,
         selected: app.selected_recipe_name.as_deref(),
         focused: app.focus == Focus::Recipe,
+        sort_order: app.recipe_sort,
+        dry_run: app.dry_run,
     };
     frame.render_widget(&recipe_widget, areas.recipe_panel);
 
     // ── File panel ───────────────────────────────────────────────
     let file_widget = file_panel::FilePanel {
         current_dir: &app.current_dir,
+        parent: app.current_dir.parent(),
         listing: &app.dir_listing,
         cursor: app.file_cursor,
         selected_files: &app.selected_files,
@@ -55,6 +58,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         preview_info: app.preview_info.as_ref(),
         preview_error: app.preview_error.as_deref(),
         focused: app.focus == Focus::Command,
+        selected_file_count: app.selected_files.len(),
     };
     frame.render_widget(&command_widget, areas.command_panel);
 
