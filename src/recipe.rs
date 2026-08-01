@@ -175,10 +175,10 @@ impl Recipe {
     /// ```
     pub fn resolved_args(&self, format_override: Option<&str>) -> Vec<String> {
         let mut out = self.args.clone();
-        if out.is_empty() {
-            if let Some(stage) = self.stages.first() {
-                out = stage.flags.clone();
-            }
+        if out.is_empty()
+            && let Some(stage) = self.stages.first()
+        {
+            out = stage.flags.clone();
         }
         if let Some(fmt) = format_override
             && let Some(format_args) = self.formats.get(fmt)
@@ -566,7 +566,11 @@ stages = [{ flags = ["-resize", "50%"] }]
     #[test]
     fn load_builtin_returns_all_11_recipes() {
         let recipes = load_builtin();
-        assert_eq!(recipes.len(), 11, "expected 11 built-in recipes (including jpeg 75)");
+        assert_eq!(
+            recipes.len(),
+            11,
+            "expected 11 built-in recipes (including jpeg 75)"
+        );
     }
 
     #[test]

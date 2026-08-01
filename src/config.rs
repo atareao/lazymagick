@@ -34,13 +34,11 @@ pub fn load_usage() -> HashMap<String, u64> {
 pub fn save_usage(usage: &HashMap<String, u64>) -> Result<(), String> {
     let path = usage_path();
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| format!("Cannot create config dir: {e}"))?;
+        std::fs::create_dir_all(parent).map_err(|e| format!("Cannot create config dir: {e}"))?;
     }
-    let content = toml::to_string_pretty(usage)
-        .map_err(|e| format!("Cannot serialize usage: {e}"))?;
-    std::fs::write(&path, &content)
-        .map_err(|e| format!("Cannot write usage: {e}"))?;
+    let content =
+        toml::to_string_pretty(usage).map_err(|e| format!("Cannot serialize usage: {e}"))?;
+    std::fs::write(&path, &content).map_err(|e| format!("Cannot write usage: {e}"))?;
     Ok(())
 }
 

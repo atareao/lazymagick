@@ -64,10 +64,8 @@ impl<'a> Widget for &CommandPanel<'a> {
             buf.set_string(
                 inner.x + 1,
                 y,
-                &format!(" {}", recipe.name),
-                Style::default()
-                    .fg(Color::Cyan)
-                    .bold(),
+                format!(" {}", recipe.name),
+                Style::default().fg(Color::Cyan).bold(),
             );
             y += 1;
             let desc = if recipe.description.len() > width {
@@ -75,12 +73,7 @@ impl<'a> Widget for &CommandPanel<'a> {
             } else {
                 recipe.description.clone()
             };
-            buf.set_string(
-                inner.x + 2,
-                y,
-                &desc,
-                Style::default().fg(Color::DarkGray),
-            );
+            buf.set_string(inner.x + 2, y, &desc, Style::default().fg(Color::DarkGray));
             y += 2;
 
             // ── Input / Output paths ────────────────────────────
@@ -92,7 +85,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                 buf.set_string(
                     inner.x + 1,
                     y,
-                    &format!(" Input:  {input_name}"),
+                    format!(" Input:  {input_name}"),
                     Style::default().fg(Color::White),
                 );
                 y += 1;
@@ -101,12 +94,15 @@ impl<'a> Widget for &CommandPanel<'a> {
                 let output_ext = format_override.unwrap_or(&recipe.output_ext);
                 let output_name = format!(
                     "{}.{output_ext}",
-                    input_file.file_stem().map(|s| s.to_string_lossy()).unwrap_or_default()
+                    input_file
+                        .file_stem()
+                        .map(|s| s.to_string_lossy())
+                        .unwrap_or_default()
                 );
                 buf.set_string(
                     inner.x + 1,
                     y,
-                    &format!(" Output: {output_name}"),
+                    format!(" Output: {output_name}"),
                     Style::default().fg(Color::White),
                 );
                 y += 2;
@@ -123,11 +119,11 @@ impl<'a> Widget for &CommandPanel<'a> {
                     cmd_parts.push(arg.clone());
                 }
                 // Fallback to stages if args empty
-                if recipe.args.is_empty() {
-                    if let Some(stage) = recipe.stages.first() {
-                        for flag in &stage.flags {
-                            cmd_parts.push(flag.clone());
-                        }
+                if recipe.args.is_empty()
+                    && let Some(stage) = recipe.stages.first()
+                {
+                    for flag in &stage.flags {
+                        cmd_parts.push(flag.clone());
                     }
                 }
                 for arg in &format_args {
@@ -141,7 +137,12 @@ impl<'a> Widget for &CommandPanel<'a> {
                 } else {
                     cmd_str
                 };
-                buf.set_string(inner.x + 1, y, &truncated, Style::default().fg(Color::Green));
+                buf.set_string(
+                    inner.x + 1,
+                    y,
+                    &truncated,
+                    Style::default().fg(Color::Green),
+                );
                 y += 1;
             }
 
@@ -150,7 +151,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                 buf.set_string(
                     inner.x + 1,
                     y,
-                    &format!(
+                    format!(
                         " {} file(s) selected — will run on each",
                         self.selected_file_count
                     ),
