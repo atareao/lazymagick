@@ -1,0 +1,155 @@
+//! Top-level TUI rendering — lay out panels and render each widget.
+
+use ratatui::{
+    Frame,
+    layout::Rect,
+    style::{Color, Modifier, Style},
+    text::Line,
+    widgets::Paragraph,
+};
+
+use crate::app::{App, Focus, Mode};
+
+pub mod command_panel;
+pub mod edit_popup;
+pub mod file_panel;
+pub mod format_picker;
+pub mod help_popup;
+pub mod layout;
+pub mod log_panel;
+pub mod recipe_panel;
+
+/// Render the entire TUI for the current frame.
+pub fn render(frame: &mut Frame, app: &App) {
+    let areas = layout::chunk_areas(frame.area());
+
+    // ── Title bar ────────────────────────────────────────────────
+    render_title_bar(frame, areas.title_bar, app);
+
+    // ── Recipe panel ─────────────────────────────────────────────
+    let recipe_widget = recipe_panel::RecipePanel {
+        recipes: &app.recipes,
+        cursor: app.recipe_cursor,
+        selected: app.selected_recipe_name.as_deref(),
+        focused: app.focus == Focus::Recipe,
+    };
+    frame.render_widget(&recipe_widget, areas.recipe_panel);
+
+    // ── File panel ───────────────────────────────────────────────
+    let file_widget = file_panel::FilePanel {
+        current_dir: &app.current_dir,
+        listing: &app.dir_listing,
+        cursor: app.file_cursor,
+        selected_files: &app.selected_files,
+        show_hidden: app.show_hidden,
+        focused: app.focus == Focus::File,
+    };
+    frame.render_widget(&file_widget, areas.file_panel);
+
+    // ── Command preview panel ────────────────────────────────────
+    let cursor_file = app.cursor_file();
+    let command_widget = command_panel::CommandPanel {
+        recipe: app.selected_recipe(),
+        input_file: cursor_file.as_deref(),
+        format_override: app.format_override.as_deref(),
+        preview_info: app.preview_info.as_ref(),
+        preview_error: app.preview_error.as_deref(),
+        focused: app.focus == Focus::Command,
+    };
+    frame.render_widget(&command_widget, areas.command_panel);
+
+    // ── Log panel ────────────────────────────────────────────────
+    let log_widget = log_panel::LogPanel {
+        entries: &app.log_entries,
+        process_running: app.magick_handle.is_some(),
+        process_output: &app.process_output,
+        focused: app.focus == Focus::Log,
+        spinner_char: app.spinner_char(),
+    };
+    frame.render_widget(&log_widget, areas.log_panel);
+
+    // ── Status bar ───────────────────────────────────────────────
+    render_status_bar(frame, areas.status_bar, app);
+
+    // ── Overlays ─────────────────────────────────────────────────
+    if app.show_format_picker {
+        let picker = format_picker::FormatPicker {
+            formats: &app.available_formats,
+            cursor: app.format_picker_cursor,
+            current_format: app.format_override.as_deref(),
+        };
+        frame.render_widget(&picker, frame.area());
+    }
+
+    if app.show_edit_popup {
+        let edit = edit_popup::EditPopup {
+            output_dir: app.edit_output_dir.as_deref(),
+            extra_args: &app.edit_extra_args,
+            output_buf: &app.edit_output_buf,
+            args_buf: &app.edit_args_buf,
+            edit_field: app.edit_field,
+        };
+        frame.render_widget(&edit, frame.area());
+    }
+
+    if app.show_help {
+        let help = help_popup::HelpPopup;
+        frame.render_widget(&help, frame.area());
+    }
+}
+
+/// Render the top title bar.
+fn render_title_bar(frame: &mut Frame, area: Rect, app: &App) {
+    let mode_indicator = match app.mode {
+        Mode::Browse => "",
+        Mode::Edit => " [EDIT]",
+        Mode::Run => " [RUN]",
+        Mode::Help => " [HELP]",
+    };
+
+    let recipe_name = app.selected_recipe_name.as_deref().unwrap_or("no recipe");
+
+    let format_info = app
+        .format_override
+        .as_deref()
+        .map(|f| format!("[{f}]"))
+        .unwrap_or_default();
+
+    let left = format!(" lazymagick v0.1.0{format_info}{mode_indicator} ");
+    let right = format!(" [recipe: {recipe_name}]  [Ctrl+Q Quit] ");
+    let padding = " ".repeat(
+        area.width
+            .saturating_sub(left.len() as u16 + right.len() as u16) as usize,
+    );
+    let title_line = Line::from(vec![left.clone().into(), padding.into(), right.into()]);
+
+    let paragraph = Paragraph::new(title_line).style(
+        Style::default()
+            .fg(Color::White)
+            .bg(Color::Black)
+            .add_modifier(Modifier::BOLD),
+    );
+    frame.render_widget(paragraph, area);
+}
+
+/// Render the bottom status bar with keybinding hints.
+fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
+    let hints = match app.mode {
+        Mode::Help => " [Help overlay]  ?/Esc: close ",
+        Mode::Edit => " [Edit popup]  Esc: cancel  Enter: confirm ",
+        Mode::Run => {
+            if app.magick_handle.is_some() {
+                " [Running…]  c: cancel "
+            } else {
+                " [Browse]  1-4: Focus  Tab: Cycle  j/k: Move  r: Run  f: Format  ?: Help "
+            }
+        }
+        Mode::Browse => {
+            " [1-4/Tab] Focus  [j/k] Move  [Space] Select  [r] Run  [f] Format  [?] Help "
+        }
+    };
+
+    let paragraph = Paragraph::new(Line::from(hints))
+        .style(Style::default().fg(Color::DarkGray).bg(Color::Black));
+    frame.render_widget(paragraph, area);
+}
