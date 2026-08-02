@@ -1,24 +1,24 @@
 # TODO — lazymagick
 
 > Port desde lazyffmpeg completado ✅ (ver PLAN.md)
-> Próximas features priorizadas
+> Phase 2 — P1 Features completado ✅ (CLI, Export, Search)
 
 ---
 
-## P1 — Alta prioridad
+## P1 — Alta prioridad ✅
 
-- [ ] **CLI / batch headless mode**
-  - Poder ejecutar `lazymagick -r "weight medium" -f avif *.png` sin abrir la TUI
-  - Útil para scripts y automatización
-  - Añadir clap/structopt como dep opcional
+- [x] **CLI / batch headless mode**
+  - `lazymagick -r "weight medium" -f avif *.png` sin abrir la TUI
+  - Vía clap + glob, con `-r/--recipe`, `-f/--format`, `-o/--output`, `--dry-run`
 
-- [ ] **Export built-in recipes a `~/.config/`**
-  - Tecla (ej: `E`) que copia todas las built-in a `~/.config/lazymagick/recipes/`
-  - Así el usuario puede editarlas cómodamente
+- [x] **Export built-in recipes a `~/.config/`**
+  - Tecla `E` que copia `builtins.toml` a `~/.config/lazymagick/recipes/`
+  - Recarga las recetas de usuario automáticamente
 
-- [ ] **Búsqueda / filtro de recetas**
-  - Con 42 recetas, teclear para filtrar por nombre/categoría
-  - Input inline en el recipe panel (como fzf)
+- [x] **Búsqueda / filtro de recetas**
+  - Escribe cualquier carácter en el panel de recetas para filtrar
+  - Filtra por nombre, categoría y tags (case-insensitive)
+  - `Esc` limpia, `Enter` selecciona el primer match
 
 ## P2 — Media prioridad
 
@@ -54,4 +54,4 @@
 
 ---
 
-*Creado: 2026-08-01*
+*Creado: 2026-08-01 | Actualizado: 2026-08-02*

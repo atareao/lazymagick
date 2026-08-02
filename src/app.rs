@@ -615,13 +615,17 @@ impl App {
                 match crate::recipe::export_builtins() {
                     Ok(count) => {
                         self.add_log(
-                            format!("Exported {count} built-in recipes to ~/.config/lazymagick/recipes/"),
+                            format!(
+                                "Exported {count} built-in recipes to ~/.config/lazymagick/recipes/"
+                            ),
                             LogLevel::Success,
                         );
                         // Reload user recipes
                         let user_recipes = crate::recipe::load_user();
                         for user_recipe in user_recipes {
-                            if let Some(pos) = self.recipes.iter().position(|r| r.name == user_recipe.name) {
+                            if let Some(pos) =
+                                self.recipes.iter().position(|r| r.name == user_recipe.name)
+                            {
                                 self.recipes[pos] = user_recipe;
                             } else {
                                 self.recipes.push(user_recipe);
@@ -682,8 +686,7 @@ impl App {
                 let max_idx = filtered_len.saturating_sub(1);
                 match key.code {
                     KeyCode::Char('j') | KeyCode::Down => {
-                        self.recipe_cursor =
-                            self.recipe_cursor.saturating_add(1).min(max_idx);
+                        self.recipe_cursor = self.recipe_cursor.saturating_add(1).min(max_idx);
                     }
                     KeyCode::Char('k') | KeyCode::Up => {
                         self.recipe_cursor = self.recipe_cursor.saturating_sub(1);
@@ -710,8 +713,7 @@ impl App {
                     KeyCode::PageDown | KeyCode::Char('d')
                         if key.modifiers == KeyModifiers::CONTROL =>
                     {
-                        self.recipe_cursor =
-                            self.recipe_cursor.saturating_add(10).min(max_idx);
+                        self.recipe_cursor = self.recipe_cursor.saturating_add(10).min(max_idx);
                     }
                     _ => {}
                 }
@@ -963,9 +965,9 @@ impl App {
     /// Returns `None` if the cursor is out of range or no recipes match.
     pub fn filtered_recipe_index(&self, cursor: usize) -> Option<usize> {
         let filtered = self.filtered_recipes();
-        filtered.get(cursor).and_then(|&r| {
-            self.recipes.iter().position(|x| std::ptr::eq(x, r))
-        })
+        filtered
+            .get(cursor)
+            .and_then(|&r| self.recipes.iter().position(|x| std::ptr::eq(x, r)))
     }
 
     // ── Format picker ─────────────────────────────────────────────

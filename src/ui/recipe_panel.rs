@@ -75,7 +75,9 @@ impl<'a> Widget for &RecipePanel<'a> {
                         || r.category
                             .as_deref()
                             .is_some_and(|c| c.to_lowercase().contains(&filter_lower))
-                        || r.tags.iter().any(|t| t.to_lowercase().contains(&filter_lower))
+                        || r.tags
+                            .iter()
+                            .any(|t| t.to_lowercase().contains(&filter_lower))
                 })
                 .collect()
         };
@@ -100,7 +102,12 @@ impl<'a> Widget for &RecipePanel<'a> {
             .cursor
             .saturating_sub(available_height.saturating_sub(1));
 
-        for (i, recipe) in filtered.iter().enumerate().skip(scroll_offset).take(available_height) {
+        for (i, recipe) in filtered
+            .iter()
+            .enumerate()
+            .skip(scroll_offset)
+            .take(available_height)
+        {
             let y = inner.y + (i - scroll_offset) as u16;
             if y >= inner.y + inner.height {
                 break;

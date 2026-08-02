@@ -183,10 +183,7 @@ fn run_headless(cli: cli::Cli) -> Result<()> {
         let safe_output = if output_dir.is_some() || format_override.is_some() {
             output
         } else {
-            let ext = output
-                .extension()
-                .and_then(|e| e.to_str())
-                .unwrap_or("");
+            let ext = output.extension().and_then(|e| e.to_str()).unwrap_or("");
             fs_utils::safe_output_path(file, ext, &recipe.name)
         };
 
