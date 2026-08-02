@@ -8,6 +8,7 @@ use ratatui::{
 };
 
 use crate::app::{LogEntry, LogLevel};
+use crate::config;
 
 /// Widget that renders the log/output panel.
 pub struct LogPanel<'a> {
@@ -21,6 +22,8 @@ pub struct LogPanel<'a> {
     pub focused: bool,
     /// Spinner frame character to show when running.
     pub spinner_char: char,
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
 }
 
 impl<'a> Widget for &LogPanel<'a> {
@@ -30,9 +33,9 @@ impl<'a> Widget for &LogPanel<'a> {
         }
 
         let border_color = if self.focused {
-            Color::Cyan
+            self.theme.border_focused
         } else {
-            Color::DarkGray
+            self.theme.border_unfocused
         };
 
         let title = if self.process_running {
@@ -58,10 +61,10 @@ impl<'a> Widget for &LogPanel<'a> {
 
         for entry in self.entries.iter() {
             let (color, prefix) = match entry.level {
-                LogLevel::Info => (Color::Blue, "ℹ"),
-                LogLevel::Success => (Color::Green, "✔"),
-                LogLevel::Error => (Color::Red, "✗"),
-                LogLevel::Magick => (Color::DarkGray, "⚙"),
+                LogLevel::Info => (self.theme.info_fg, "ℹ"),
+                LogLevel::Success => (self.theme.success_fg, "✔"),
+                LogLevel::Error => (self.theme.error_fg, "✗"),
+                LogLevel::Magick => (self.theme.dim_text_fg, "⚙"),
             };
             display_lines.push((format!("{prefix} {}", entry.message), color));
         }
@@ -71,9 +74,12 @@ impl<'a> Widget for &LogPanel<'a> {
             let lines: Vec<&str> = self.process_output.lines().collect();
             let start = lines.len().saturating_sub(5);
             for line in &lines[start..] {
-                display_lines.push((line.to_string(), Color::DarkGray));
+                display_lines.push((line.to_string(), self.theme.dim_text_fg));
             }
-            display_lines.push((format!(" {} Processing…", self.spinner_char), Color::Cyan));
+            display_lines.push((
+                format!(" {} Processing…", self.spinner_char),
+                self.theme.progress_fg,
+            ));
         }
 
         // Show from the end (most recent)

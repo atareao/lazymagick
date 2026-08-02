@@ -3,9 +3,11 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Clear, Widget},
 };
+
+use crate::config;
 
 /// Widget that renders a centered format picker popup.
 pub struct FormatPicker<'a> {
@@ -15,6 +17,8 @@ pub struct FormatPicker<'a> {
     pub cursor: usize,
     /// The currently active format override, if any.
     pub current_format: Option<&'a str>,
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
 }
 
 impl<'a> Widget for &FormatPicker<'a> {
@@ -37,8 +41,8 @@ impl<'a> Widget for &FormatPicker<'a> {
         let block = Block::default()
             .title(" Select output format ")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan))
-            .style(Style::default().bg(Color::Black));
+            .border_style(Style::default().fg(self.theme.accent_fg))
+            .style(Style::default().bg(self.theme.background));
         let inner = block.inner(popup_area);
         block.render(popup_area, buf);
 
@@ -55,11 +59,11 @@ impl<'a> Widget for &FormatPicker<'a> {
             let is_cursor = i == self.cursor;
             let is_current = self.current_format.is_some_and(|c| c == fmt);
 
-            let mut style = Style::default().fg(Color::White);
+            let mut style = Style::default().fg(self.theme.text_fg);
             if is_cursor {
-                style = style.fg(Color::Cyan).bg(Color::DarkGray);
+                style = style.fg(self.theme.cursor_fg).bg(self.theme.cursor_bg);
             } else if is_current {
-                style = style.fg(Color::Green);
+                style = style.fg(self.theme.selected_fg);
             }
 
             let prefix = if is_cursor {
@@ -82,7 +86,7 @@ impl<'a> Widget for &FormatPicker<'a> {
             inner.x + 1,
             hint_y,
             hint,
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(self.theme.dim_text_fg),
         );
     }
 }

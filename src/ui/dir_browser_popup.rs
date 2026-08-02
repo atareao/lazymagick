@@ -5,15 +5,23 @@ use std::path::Path;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Clear, Widget},
 };
+
+use crate::config;
 
 /// Renders a directory browser popup for selecting an output directory.
 ///
 /// Shows the current path and a scrollable list of subdirectories.
 /// Called from within the edit popup when the user presses a key to browse.
-pub fn render(area: Rect, buf: &mut Buffer, current_path: &Path, cursor: usize) {
+pub fn render(
+    area: Rect,
+    buf: &mut Buffer,
+    current_path: &Path,
+    cursor: usize,
+    theme: &config::ThemeColors,
+) {
     // Dim the background
     Clear.render(area, buf);
 
@@ -27,7 +35,7 @@ pub fn render(area: Rect, buf: &mut Buffer, current_path: &Path, cursor: usize) 
     let block = Block::default()
         .title(" Directory Browser ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Cyan));
+        .border_style(Style::default().fg(theme.accent_fg));
     let inner = block.inner(popup_area);
     block.render(popup_area, buf);
 
@@ -46,7 +54,7 @@ pub fn render(area: Rect, buf: &mut Buffer, current_path: &Path, cursor: usize) 
         inner.x + 1,
         inner.y,
         &display_path,
-        Style::default().fg(Color::Yellow),
+        Style::default().fg(theme.title_fg),
     );
 
     // ── Parent directory entry ───────────────────────────────────
@@ -98,9 +106,9 @@ pub fn render(area: Rect, buf: &mut Buffer, current_path: &Path, cursor: usize) 
         let line = format!("{prefix}{marker} {name}");
 
         let style = if is_cursor {
-            Style::default().fg(Color::Cyan).bg(Color::DarkGray)
+            Style::default().fg(theme.cursor_fg).bg(theme.cursor_bg)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(theme.text_fg)
         };
         buf.set_string(inner.x + 1, y, &line, style);
     }
@@ -112,6 +120,6 @@ pub fn render(area: Rect, buf: &mut Buffer, current_path: &Path, cursor: usize) 
         inner.x + 1,
         help_y,
         help,
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(theme.dim_text_fg),
     );
 }

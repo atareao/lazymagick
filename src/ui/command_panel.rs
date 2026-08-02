@@ -6,12 +6,13 @@ use std::path::Path;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Widget},
 };
 
 use ratatui::prelude::Stylize;
 
+use crate::config;
 use crate::{magick::ImageInfo, recipe::Recipe};
 
 /// Widget that renders the command preview panel.
@@ -38,6 +39,8 @@ pub struct CommandPanel<'a> {
     pub progress_total: u64,
     /// Current processing stage name.
     pub progress_stage: String,
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
 }
 
 impl<'a> Widget for &CommandPanel<'a> {
@@ -47,9 +50,9 @@ impl<'a> Widget for &CommandPanel<'a> {
         }
 
         let border_color = if self.focused {
-            Color::Green
+            self.theme.border_focused
         } else {
-            Color::DarkGray
+            self.theme.border_unfocused
         };
 
         let block = Block::default()
@@ -80,7 +83,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                     inner.x + 1,
                     y,
                     format!(" {}", self.progress_stage),
-                    Style::default().fg(Color::Cyan),
+                    Style::default().fg(self.theme.progress_fg),
                 );
                 y += 1;
             }
@@ -99,7 +102,12 @@ impl<'a> Widget for &CommandPanel<'a> {
                     .chain(std::iter::repeat_n('░', display_empty))
                     .chain(pct_str.chars())
                     .collect();
-                buf.set_string(inner.x + 1, y, &bar_line, Style::default().fg(Color::Cyan));
+                buf.set_string(
+                    inner.x + 1,
+                    y,
+                    &bar_line,
+                    Style::default().fg(self.theme.progress_fg),
+                );
                 y += 1;
             }
             y += 1;
@@ -112,7 +120,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                 inner.x + 1,
                 y,
                 format!(" {}", recipe.name),
-                Style::default().fg(Color::Cyan).bold(),
+                Style::default().fg(self.theme.accent_fg).bold(),
             );
             y += 1;
             let desc = if recipe.description.len() > width {
@@ -120,7 +128,12 @@ impl<'a> Widget for &CommandPanel<'a> {
             } else {
                 recipe.description.clone()
             };
-            buf.set_string(inner.x + 2, y, &desc, Style::default().fg(Color::DarkGray));
+            buf.set_string(
+                inner.x + 2,
+                y,
+                &desc,
+                Style::default().fg(self.theme.dim_text_fg),
+            );
             y += 2;
 
             // ── Input / Output paths ────────────────────────────
@@ -133,7 +146,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                     inner.x + 1,
                     y,
                     format!(" Input:  {input_name}"),
-                    Style::default().fg(Color::White),
+                    Style::default().fg(self.theme.text_fg),
                 );
                 y += 1;
 
@@ -150,11 +163,11 @@ impl<'a> Widget for &CommandPanel<'a> {
                     inner.x + 1,
                     y,
                     format!(" Output: {output_name}"),
-                    Style::default().fg(Color::White),
+                    Style::default().fg(self.theme.text_fg),
                 );
                 y += 2;
 
-                // ── Command string (green) ──────────────────────
+                // ── Command string ──────────────────────────────
                 let format_args: Vec<String> = format_override
                     .and_then(|fmt| recipe.formats.get(fmt))
                     .cloned()
@@ -188,7 +201,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                     inner.x + 1,
                     y,
                     &truncated,
-                    Style::default().fg(Color::Green),
+                    Style::default().fg(self.theme.selected_fg),
                 );
                 y += 1;
             }
@@ -202,7 +215,7 @@ impl<'a> Widget for &CommandPanel<'a> {
                         " {} file(s) selected — will run on each",
                         self.selected_file_count
                     ),
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(self.theme.warning_fg),
                 );
                 y += 1;
             }
@@ -210,7 +223,12 @@ impl<'a> Widget for &CommandPanel<'a> {
             // ── Format override indicator ────────────────────────
             if let Some(fmt) = self.format_override {
                 let fmt_line = format!(" [Format override: {fmt}] ");
-                buf.set_string(inner.x + 1, y, &fmt_line, Style::default().fg(Color::Cyan));
+                buf.set_string(
+                    inner.x + 1,
+                    y,
+                    &fmt_line,
+                    Style::default().fg(self.theme.accent_fg),
+                );
                 y += 1;
             }
 
@@ -230,7 +248,12 @@ impl<'a> Widget for &CommandPanel<'a> {
                     if y >= inner.y + inner.height - 1 {
                         break;
                     }
-                    buf.set_string(inner.x + 1, y, line, Style::default().fg(Color::White));
+                    buf.set_string(
+                        inner.x + 1,
+                        y,
+                        line,
+                        Style::default().fg(self.theme.text_fg),
+                    );
                     y += 1;
                 }
             }
@@ -242,13 +265,18 @@ impl<'a> Widget for &CommandPanel<'a> {
                     inner.x + 1,
                     y,
                     format!(" ⚠ {err}"),
-                    Style::default().fg(Color::Red),
+                    Style::default().fg(self.theme.error_fg),
                 );
             }
         } else {
             let hint = " Select a recipe and file ";
             if y < inner.y + inner.height - 1 {
-                buf.set_string(inner.x + 1, y, hint, Style::default().fg(Color::DarkGray));
+                buf.set_string(
+                    inner.x + 1,
+                    y,
+                    hint,
+                    Style::default().fg(self.theme.dim_text_fg),
+                );
             }
         }
 
@@ -259,7 +287,7 @@ impl<'a> Widget for &CommandPanel<'a> {
             inner.x + 1,
             hint_y,
             hint,
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(self.theme.dim_text_fg),
         );
     }
 }

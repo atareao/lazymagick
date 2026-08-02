@@ -3,14 +3,19 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     widgets::{Block, Borders, Clear, Widget},
 };
 
-/// Keybinding help popup widget.
-pub struct HelpPopup;
+use crate::config;
 
-impl Widget for &HelpPopup {
+/// Keybinding help popup widget.
+pub struct HelpPopup<'a> {
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
+}
+
+impl<'a> Widget for &HelpPopup<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let popup_width = area.width.min(56);
         let popup_height = area.height.min(24);
@@ -24,8 +29,8 @@ impl Widget for &HelpPopup {
         let block = Block::default()
             .title(" Help — Keybindings ")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan))
-            .style(Style::default().bg(Color::Black));
+            .border_style(Style::default().fg(self.theme.accent_fg))
+            .style(Style::default().bg(self.theme.background));
         let inner = block.inner(popup_area);
         block.render(popup_area, buf);
 
@@ -76,7 +81,7 @@ impl Widget for &HelpPopup {
                     y_offset,
                     key,
                     Style::default()
-                        .fg(Color::Cyan)
+                        .fg(self.theme.accent_fg)
                         .add_modifier(Modifier::BOLD),
                 );
             } else if key.is_empty() {
@@ -87,7 +92,7 @@ impl Widget for &HelpPopup {
                     y_offset,
                     key,
                     Style::default()
-                        .fg(Color::Yellow)
+                        .fg(self.theme.warning_fg)
                         .add_modifier(Modifier::BOLD),
                 );
                 let x = inner.x + 2 + key.len() as u16 + 2;
@@ -98,7 +103,12 @@ impl Widget for &HelpPopup {
                     } else {
                         desc.to_string()
                     };
-                    buf.set_string(x, y_offset, &desc_trunc, Style::default().fg(Color::White));
+                    buf.set_string(
+                        x,
+                        y_offset,
+                        &desc_trunc,
+                        Style::default().fg(self.theme.text_fg),
+                    );
                 }
             }
         }
@@ -110,7 +120,7 @@ impl Widget for &HelpPopup {
             inner.x + (inner.width.saturating_sub(hint.len() as u16)) / 2,
             hint_y,
             hint,
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(self.theme.dim_text_fg),
         );
     }
 }

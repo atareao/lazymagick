@@ -5,12 +5,20 @@ use std::path::PathBuf;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     widgets::{Block, Borders, Clear, Widget},
 };
 
+use crate::config;
+
 /// Render the undo list popup.
-pub fn render(area: Rect, buf: &mut Buffer, outputs: &[PathBuf], cursor: usize) {
+pub fn render(
+    area: Rect,
+    buf: &mut Buffer,
+    outputs: &[PathBuf],
+    cursor: usize,
+    theme: &config::ThemeColors,
+) {
     let popup_width = area.width.min(64);
     let list_lines = outputs.len().min(16) + 3; // title + entries + help
     let popup_height = (list_lines as u16)
@@ -26,8 +34,8 @@ pub fn render(area: Rect, buf: &mut Buffer, outputs: &[PathBuf], cursor: usize) 
     let block = Block::default()
         .title(" Undo / Revert ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Cyan))
-        .style(Style::default().bg(Color::Black));
+        .border_style(Style::default().fg(theme.accent_fg))
+        .style(Style::default().bg(theme.background));
     let inner = block.inner(popup_area);
     block.render(popup_area, buf);
 
@@ -53,7 +61,7 @@ pub fn render(area: Rect, buf: &mut Buffer, outputs: &[PathBuf], cursor: usize) 
             inner.x + 1,
             inner.y + 1,
             empty_text,
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(theme.dim_text_fg),
         );
     }
 
@@ -75,11 +83,11 @@ pub fn render(area: Rect, buf: &mut Buffer, outputs: &[PathBuf], cursor: usize) 
 
         let style = if is_cursor {
             Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
+                .fg(theme.cursor_fg)
+                .bg(theme.cursor_bg)
                 .add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(theme.text_fg)
         };
 
         let indicator = if is_cursor { "▸ " } else { "  " };
@@ -94,6 +102,6 @@ pub fn render(area: Rect, buf: &mut Buffer, outputs: &[PathBuf], cursor: usize) 
         inner.x + 1,
         help_y,
         help_text,
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(theme.dim_text_fg),
     );
 }

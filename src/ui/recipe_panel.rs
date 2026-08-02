@@ -3,11 +3,12 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Widget},
 };
 
 use crate::app::SortOrder;
+use crate::config;
 use crate::recipe::Recipe;
 
 /// Widget that renders the recipe list panel.
@@ -28,6 +29,8 @@ pub struct RecipePanel<'a> {
     pub filter: &'a str,
     /// Whether the user is actively typing a filter.
     pub is_filtering: bool,
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
 }
 
 impl<'a> Widget for &RecipePanel<'a> {
@@ -37,9 +40,9 @@ impl<'a> Widget for &RecipePanel<'a> {
         }
 
         let border_color = if self.focused {
-            Color::Green
+            self.theme.border_focused
         } else {
-            Color::DarkGray
+            self.theme.border_unfocused
         };
 
         let sort_label = match self.sort_order {
@@ -92,7 +95,7 @@ impl<'a> Widget for &RecipePanel<'a> {
                 inner.x + 1,
                 inner.y + 1,
                 text,
-                Style::default().fg(Color::DarkGray),
+                Style::default().fg(self.theme.dim_text_fg),
             );
             return;
         }
@@ -133,11 +136,13 @@ impl<'a> Widget for &RecipePanel<'a> {
             let line1 = format!("{prefix} {sel_mark} {cat_tag}{}{usage}", recipe.name);
 
             let style = if is_cursor {
-                Style::default().fg(Color::Cyan).bg(Color::DarkGray)
+                Style::default()
+                    .fg(self.theme.cursor_fg)
+                    .bg(self.theme.cursor_bg)
             } else if is_selected {
-                Style::default().fg(Color::Green)
+                Style::default().fg(self.theme.selected_fg)
             } else {
-                Style::default().fg(Color::White)
+                Style::default().fg(self.theme.text_fg)
             };
             buf.set_string(inner.x + 1, y, &line1, style);
 
@@ -154,7 +159,7 @@ impl<'a> Widget for &RecipePanel<'a> {
                     inner.x + 2,
                     desc_y,
                     &desc,
-                    Style::default().fg(Color::DarkGray),
+                    Style::default().fg(self.theme.dim_text_fg),
                 );
             }
         }

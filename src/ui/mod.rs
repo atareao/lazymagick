@@ -40,6 +40,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         dry_run: app.dry_run,
         filter: &app.recipe_filter,
         is_filtering: app.is_filtering,
+        theme: &app.theme,
     };
     frame.render_widget(&recipe_widget, areas.recipe_panel);
 
@@ -52,6 +53,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         selected_files: &app.selected_files,
         show_hidden: app.show_hidden,
         focused: app.focus == Focus::File,
+        theme: &app.theme,
     };
     frame.render_widget(&file_widget, areas.file_panel);
 
@@ -69,6 +71,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         progress_current: app.progress_current,
         progress_total: app.progress_total,
         progress_stage: app.progress_stage.clone(),
+        theme: &app.theme,
     };
     frame.render_widget(&command_widget, areas.command_panel);
 
@@ -79,6 +82,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         process_output: &app.process_output,
         focused: app.focus == Focus::Log,
         spinner_char: app.spinner_char(),
+        theme: &app.theme,
     };
     frame.render_widget(&log_widget, areas.log_panel);
 
@@ -91,6 +95,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             formats: &app.available_formats,
             cursor: app.format_picker_cursor,
             current_format: app.format_override.as_deref(),
+            theme: &app.theme,
         };
         frame.render_widget(&picker, frame.area());
     }
@@ -102,6 +107,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             output_buf: &app.edit_output_buf,
             args_buf: &app.edit_args_buf,
             edit_field: app.edit_field,
+            theme: &app.theme,
         };
         frame.render_widget(&edit, frame.area());
 
@@ -112,6 +118,7 @@ pub fn render(frame: &mut Frame, app: &App) {
                 frame.buffer_mut(),
                 &app.dir_browser_path,
                 app.dir_browser_cursor,
+                &app.theme,
             );
         }
     }
@@ -120,11 +127,11 @@ pub fn render(frame: &mut Frame, app: &App) {
     if app.show_exif
         && let Some(ref exif) = app.exif_info
     {
-        exif_panel::render(frame.area(), frame.buffer_mut(), exif);
+        exif_panel::render(frame.area(), frame.buffer_mut(), exif, &app.theme);
     }
 
     if app.show_help {
-        let help = help_popup::HelpPopup;
+        let help = help_popup::HelpPopup { theme: &app.theme };
         frame.render_widget(&help, frame.area());
     }
 
@@ -135,6 +142,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             frame.buffer_mut(),
             &app.generated_outputs,
             app.undo_cursor,
+            &app.theme,
         );
     }
 }

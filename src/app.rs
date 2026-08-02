@@ -10,6 +10,7 @@ use std::time::Instant;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use crate::config;
 use crate::fs_utils;
 use crate::magick::{self, CommandBuilder};
 use crate::recipe::{self, Recipe};
@@ -300,6 +301,9 @@ pub struct App {
     pub show_undo_list: bool,
     /// Cursor in the undo list.
     pub undo_cursor: usize,
+
+    /// Parsed theme colors for the UI.
+    pub theme: config::ThemeColors,
 }
 
 impl App {
@@ -323,6 +327,8 @@ impl App {
             Err(_) => PathBuf::from("/"),
         };
         let dir_listing = fs_utils::list_directory(&current_dir).unwrap_or_default();
+
+        let settings = crate::config::Settings::load();
 
         Self {
             mode: Mode::default(),
@@ -386,6 +392,7 @@ impl App {
             generated_outputs: Vec::new(),
             show_undo_list: false,
             undo_cursor: 0,
+            theme: config::ThemeColors::from(&settings.theme),
         }
     }
 

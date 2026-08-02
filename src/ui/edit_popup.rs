@@ -5,11 +5,12 @@ use std::path::Path;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Clear, Widget},
 };
 
 use crate::app::EditField;
+use crate::config;
 
 /// Widget that renders the edit parameters popup with inline editing.
 pub struct EditPopup<'a> {
@@ -23,6 +24,8 @@ pub struct EditPopup<'a> {
     pub args_buf: &'a str,
     /// Which field is currently being edited.
     pub edit_field: EditField,
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
 }
 
 impl<'a> Widget for &EditPopup<'a> {
@@ -39,8 +42,8 @@ impl<'a> Widget for &EditPopup<'a> {
         let block = Block::default()
             .title(" Edit Parameters ")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan))
-            .style(Style::default().bg(Color::Black));
+            .border_style(Style::default().fg(self.theme.accent_fg))
+            .style(Style::default().bg(self.theme.background));
         let inner = block.inner(popup_area);
         block.render(popup_area, buf);
 
@@ -49,16 +52,18 @@ impl<'a> Widget for &EditPopup<'a> {
         // ── Output directory field ─────────────────────────────
         let out_active = self.edit_field == EditField::OutputDir;
         let out_style = if out_active {
-            Style::default().fg(Color::Cyan).bg(Color::DarkGray)
+            Style::default()
+                .fg(self.theme.accent_fg)
+                .bg(self.theme.cursor_bg)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(self.theme.text_fg)
         };
 
         buf.set_string(
             inner.x + 1,
             y,
             " Output directory: ",
-            Style::default().fg(Color::Cyan),
+            Style::default().fg(self.theme.accent_fg),
         );
         let out_display = if self.output_buf.is_empty() {
             "(same as input)".to_string()
@@ -87,7 +92,7 @@ impl<'a> Widget for &EditPopup<'a> {
                 inner.x + 1,
                 y,
                 "  Ctrl+O: Browse directories  ",
-                Style::default().fg(Color::DarkGray),
+                Style::default().fg(self.theme.dim_text_fg),
             );
             y += 1;
         }
@@ -95,16 +100,18 @@ impl<'a> Widget for &EditPopup<'a> {
         // ── Extra args field ───────────────────────────────────
         let args_active = self.edit_field == EditField::ExtraArgs;
         let args_style = if args_active {
-            Style::default().fg(Color::Cyan).bg(Color::DarkGray)
+            Style::default()
+                .fg(self.theme.accent_fg)
+                .bg(self.theme.cursor_bg)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(self.theme.text_fg)
         };
 
         buf.set_string(
             inner.x + 1,
             y,
             " Extra args:      ",
-            Style::default().fg(Color::Cyan),
+            Style::default().fg(self.theme.accent_fg),
         );
         let args_display = if self.args_buf.is_empty() {
             "(none)".to_string()
@@ -131,7 +138,7 @@ impl<'a> Widget for &EditPopup<'a> {
             inner.x + 1,
             y,
             " Tab: switch field  Backspace: delete  Type: insert ",
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(self.theme.dim_text_fg),
         );
         y += 1;
 
@@ -139,7 +146,7 @@ impl<'a> Widget for &EditPopup<'a> {
             inner.x + 1,
             y,
             " Enter: apply  Esc: cancel ",
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(self.theme.dim_text_fg),
         );
     }
 }

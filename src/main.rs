@@ -106,6 +106,7 @@ fn run_app(mut terminal: ratatui::DefaultTerminal) -> Result<()> {
         skip_run_confirm: false,
         skip_overwrite_confirm: false,
         default_directory: Some(current_dir),
+        ..Default::default()
     };
     if let Err(e) = settings.save() {
         eprintln!("Warning: failed to save settings: {e}");

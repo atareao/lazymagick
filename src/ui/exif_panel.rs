@@ -3,10 +3,11 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Clear, Widget},
 };
 
+use crate::config;
 use crate::magick::ExifInfo;
 
 fn or_dash(s: &str) -> &str {
@@ -14,7 +15,7 @@ fn or_dash(s: &str) -> &str {
 }
 
 /// Renders an EXIF metadata overlay popup.
-pub fn render(area: Rect, buf: &mut Buffer, info: &ExifInfo) {
+pub fn render(area: Rect, buf: &mut Buffer, info: &ExifInfo, theme: &config::ThemeColors) {
     let popup_width = area.width.min(60);
     let popup_height = 22;
 
@@ -27,8 +28,8 @@ pub fn render(area: Rect, buf: &mut Buffer, info: &ExifInfo) {
     let block = Block::default()
         .title(" EXIF Metadata ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Cyan))
-        .style(Style::default().bg(Color::Black));
+        .border_style(Style::default().fg(theme.accent_fg))
+        .style(Style::default().bg(theme.background));
     let inner = block.inner(popup_area);
     block.render(popup_area, buf);
 
@@ -62,9 +63,9 @@ pub fn render(area: Rect, buf: &mut Buffer, info: &ExifInfo) {
         let style = if line.is_empty() {
             Style::default()
         } else if line.ends_with(':') {
-            Style::default().fg(Color::Cyan)
+            Style::default().fg(theme.accent_fg)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(theme.text_fg)
         };
         buf.set_string(inner.x + 1, y, line, style);
     }
@@ -75,6 +76,6 @@ pub fn render(area: Rect, buf: &mut Buffer, info: &ExifInfo) {
         inner.x + 1,
         hint_y,
         " x: Close ",
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(theme.dim_text_fg),
     );
 }

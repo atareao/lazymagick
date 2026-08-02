@@ -6,10 +6,11 @@ use std::path::{Path, PathBuf};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Borders, Widget},
 };
 
+use crate::config;
 use crate::fs_utils::DirListing;
 
 /// Widget that renders the file browser panel.
@@ -28,6 +29,8 @@ pub struct FilePanel<'a> {
     pub show_hidden: bool,
     /// Whether this panel has keyboard focus.
     pub focused: bool,
+    /// Parsed theme colors for the UI.
+    pub theme: &'a config::ThemeColors,
 }
 
 /// Category of a filesystem entry in the combined list.
@@ -91,9 +94,9 @@ impl<'a> Widget for &FilePanel<'a> {
         }
 
         let border_color = if self.focused {
-            Color::Green
+            self.theme.border_focused
         } else {
-            Color::DarkGray
+            self.theme.border_unfocused
         };
 
         let dir_display = self.current_dir.display().to_string();
@@ -123,7 +126,7 @@ impl<'a> Widget for &FilePanel<'a> {
                 inner.x + 1,
                 inner.y + 1,
                 text,
-                Style::default().fg(Color::DarkGray),
+                Style::default().fg(self.theme.dim_text_fg),
             );
             return;
         }
@@ -156,27 +159,27 @@ impl<'a> Widget for &FilePanel<'a> {
 
             let mut style = Style::default();
             if is_cursor {
-                style = style.fg(Color::Cyan).bg(Color::DarkGray);
+                style = style.fg(self.theme.cursor_fg).bg(self.theme.cursor_bg);
             }
             if !is_cursor {
                 match kind {
                     EntryKind::Directory => {
-                        style = style.fg(Color::Blue);
+                        style = style.fg(self.theme.directory_fg);
                     }
                     EntryKind::Image => {
                         style = if is_selected {
-                            style.fg(Color::Green)
+                            style.fg(self.theme.selected_fg)
                         } else {
-                            style.fg(Color::White)
+                            style.fg(self.theme.text_fg)
                         };
                     }
                     EntryKind::Other => {
-                        style = style.fg(Color::DarkGray);
+                        style = style.fg(self.theme.dim_text_fg);
                     }
                 }
             }
             if is_hidden && !is_cursor {
-                style = style.fg(Color::DarkGray);
+                style = style.fg(self.theme.dim_text_fg);
             }
 
             let (prefix, suffix) = if *kind == EntryKind::Directory {
