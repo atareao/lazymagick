@@ -26,16 +26,13 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libjpeg-dev libpng-dev libwebp-dev libheif-dev \
-            libraw-dev libtiff-dev libfreetype6-dev libfontconfig1-dev
-          curl -L --retry 3 -o /tmp/im7.tar.gz \
-            https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.2-35.tar.gz
-          cd /tmp && tar xzf im7.tar.gz
-          cd ImageMagick-7.1.2-35
-          ./configure --prefix=/usr --enable-shared=yes --with-modules
-          make -j$(nproc)
-          sudo make install
-          sudo ldconfig
+          sudo apt-get install -y imagemagick
+          # On Ubuntu, `magick` may not be in PATH; create a wrapper
+          if ! command -v magick &>/dev/null; then
+            echo '#!/bin/bash
+exec convert "$@"' | sudo tee /usr/local/bin/magick
+            sudo chmod +x /usr/local/bin/magick
+          fi
           magick -version
 
       - name: Install ImageMagick (macOS)
