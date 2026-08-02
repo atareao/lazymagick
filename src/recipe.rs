@@ -291,6 +291,27 @@ pub fn load_all() -> Vec<Recipe> {
     builtin
 }
 
+/// Export built-in recipes to the user config directory for editing.
+///
+/// Creates `~/.config/lazymagick/recipes/builtins.toml` containing
+/// all built-in recipes. Existing files are overwritten.
+///
+/// Returns the number of recipes exported, or an error message.
+pub fn export_builtins() -> Result<usize, String> {
+    let dest_dir = crate::config::user_recipes_dir();
+    std::fs::create_dir_all(&dest_dir)
+        .map_err(|e| format!("Cannot create recipes dir: {e}"))?;
+
+    let dest_path = dest_dir.join("builtins.toml");
+    let content = include_str!("../recipes/builtins.toml");
+    std::fs::write(&dest_path, content)
+        .map_err(|e| format!("Cannot write recipes file: {e}"))?;
+
+    // Count how many recipes were exported
+    let count = load_builtin().len();
+    Ok(count)
+}
+
 // ---------------------------------------------------------------------------
 // Parsing helpers
 // ---------------------------------------------------------------------------

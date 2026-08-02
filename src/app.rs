@@ -605,6 +605,29 @@ impl App {
             KeyCode::Char('e') => {
                 self.open_edit();
             }
+            KeyCode::Char('E') => {
+                match crate::recipe::export_builtins() {
+                    Ok(count) => {
+                        self.add_log(
+                            format!("Exported {count} built-in recipes to ~/.config/lazymagick/recipes/"),
+                            LogLevel::Success,
+                        );
+                        // Reload user recipes
+                        let user_recipes = crate::recipe::load_user();
+                        for user_recipe in user_recipes {
+                            if let Some(pos) = self.recipes.iter().position(|r| r.name == user_recipe.name) {
+                                self.recipes[pos] = user_recipe;
+                            } else {
+                                self.recipes.push(user_recipe);
+                            }
+                        }
+                        self.sort_recipes();
+                    }
+                    Err(e) => {
+                        self.add_log(format!("Failed to export recipes: {e}"), LogLevel::Error);
+                    }
+                }
+            }
             _ => {}
         }
     }
