@@ -13,6 +13,7 @@ use crate::app::{App, Focus, Mode};
 pub mod command_panel;
 pub mod dir_browser_popup;
 pub mod edit_popup;
+pub mod exif_panel;
 pub mod file_panel;
 pub mod format_picker;
 pub mod help_popup;
@@ -112,6 +113,13 @@ pub fn render(frame: &mut Frame, app: &App) {
                 app.dir_browser_cursor,
             );
         }
+    }
+
+    // EXIF metadata overlay
+    if app.show_exif
+        && let Some(ref exif) = app.exif_info
+    {
+        exif_panel::render(frame.area(), frame.buffer_mut(), exif);
     }
 
     if app.show_help {

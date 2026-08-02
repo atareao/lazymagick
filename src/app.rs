@@ -288,6 +288,10 @@ pub struct App {
     pub preview_info: Option<magick::ImageInfo>,
     /// Error message from the last `identify` attempt.
     pub preview_error: Option<String>,
+    /// Parsed EXIF metadata (fetched on demand).
+    pub exif_info: Option<magick::ExifInfo>,
+    /// Whether to show the EXIF panel overlay.
+    pub show_exif: bool,
 }
 
 impl App {
@@ -369,6 +373,8 @@ impl App {
 
             preview_info: None,
             preview_error: None,
+            exif_info: None,
+            show_exif: false,
         }
     }
 
@@ -663,6 +669,17 @@ impl App {
                     "Recursive mode disabled"
                 };
                 self.add_log(msg.into(), LogLevel::Info);
+            }
+            KeyCode::Char('x') => {
+                if self.show_exif {
+                    self.show_exif = false;
+                } else if let Some(file) = self.visible_entry_at(self.file_cursor)
+                    && file.is_file()
+                    && fs_utils::is_image(&file)
+                {
+                    self.exif_info = magick::CommandBuilder::identify_exif(&file).ok();
+                    self.show_exif = true;
+                }
             }
             _ => {}
         }

@@ -24,6 +24,35 @@ pub struct ImageInfo {
     pub file_size: String,
 }
 
+/// Parsed EXIF metadata from `magick identify -verbose`.
+#[derive(Debug, Clone, Default)]
+pub struct ExifInfo {
+    /// Camera make, e.g. `"Canon"`.
+    pub make: String,
+    /// Camera model, e.g. `"EOS R5"`.
+    pub model: String,
+    /// ISO speed, e.g. `"400"`.
+    pub iso: String,
+    /// Exposure time, e.g. `"1/125"`.
+    pub exposure: String,
+    /// Aperture, e.g. `"f/2.8"`.
+    pub aperture: String,
+    /// Focal length, e.g. `"50mm"`.
+    pub focal_length: String,
+    /// Date taken, e.g. `"2024:01:01 12:00:00"`.
+    pub date_taken: String,
+    /// GPS latitude, e.g. `"40.7128 N"`.
+    pub gps_latitude: String,
+    /// GPS longitude, e.g. `"74.0060 W"`.
+    pub gps_longitude: String,
+    /// Software used, e.g. `"Adobe Lightroom"`.
+    pub software: String,
+    /// Orientation, e.g. `"Top-left"`.
+    pub orientation: String,
+    /// Raw key-value pairs for any other EXIF data.
+    pub raw: Vec<(String, String)>,
+}
+
 /// Errors that can occur during magick operations.
 #[derive(Debug)]
 pub enum MagickError {
@@ -184,6 +213,90 @@ impl CommandBuilder {
             color_space: fields[3].to_string(),
             file_size: fields[4].to_string(),
         })
+    }
+
+    /// Run `magick identify -verbose` and parse EXIF metadata.
+    ///
+    /// Returns an `ExifInfo` with camera settings, GPS, and other properties.
+    /// Fields that are not present in the image are left empty.
+    pub fn identify_exif(input: &Path) -> Result<ExifInfo, MagickError> {
+        if !Self::check_available() {
+            return Err(MagickError::NotFound);
+        }
+
+        let output = Command::new("magick")
+            .args(["identify", "-verbose"])
+            .arg(input.as_os_str())
+            .output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            return Err(MagickError::IdentifyFailed(stderr));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let mut exif = ExifInfo::default();
+
+        // Parse properties section (after "Properties:" line)
+        let mut in_properties = false;
+        for line in stdout.lines() {
+            let trimmed = line.trim();
+
+            if trimmed == "Properties:" {
+                in_properties = true;
+                continue;
+            }
+
+            if in_properties {
+                // Stop at next section (indentation ends or blank line followed by non-indented)
+                if trimmed.is_empty()
+                    || (!trimmed.starts_with("exif:")
+                        && !trimmed.starts_with("date:")
+                        && !trimmed.starts_with("xmp:")
+                        && !trimmed.starts_with("png:")
+                        && !trimmed.starts_with("jpeg:")
+                        && !trimmed.starts_with("signature"))
+                {
+                    // Check if this is a new section header (no leading space)
+                    if !line.starts_with(' ') && trimmed.ends_with(':') {
+                        in_properties = false;
+                        continue;
+                    }
+                    // Skip non-EXIF lines but stay in properties
+                    continue;
+                }
+
+                // Parse "key: value"
+                if let Some((key, value)) = trimmed.split_once(": ") {
+                    let val = value.trim().to_string();
+                    match key {
+                        "exif:Make" => exif.make = val,
+                        "exif:Model" => exif.model = val,
+                        "exif:ISOSpeedRatings" | "exif:ISOSpeed" => exif.iso = val,
+                        "exif:ExposureTime" => exif.exposure = val,
+                        "exif:FNumber" => exif.aperture = val,
+                        "exif:FocalLength" => exif.focal_length = val,
+                        "exif:DateTimeOriginal" | "exif:DateTimeDigitized" => {
+                            if exif.date_taken.is_empty() {
+                                exif.date_taken = val;
+                            }
+                        }
+                        "exif:GPSLatitude" => exif.gps_latitude = val,
+                        "exif:GPSLongitude" => exif.gps_longitude = val,
+                        "exif:Software" => exif.software = val,
+                        "exif:Orientation" => exif.orientation = val,
+                        _ => {
+                            // Store any other exif: or other property
+                            if key.starts_with("exif:") || key.starts_with("date:") {
+                                exif.raw.push((key.to_string(), val));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(exif)
     }
 
     /// Check whether `magick` is available on `$PATH`.
