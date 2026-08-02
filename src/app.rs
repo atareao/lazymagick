@@ -412,7 +412,8 @@ impl App {
             before_after_info: None,
             show_image_preview: false,
             image_protocol: None,
-            image_picker: Some(Picker::halfblocks()),
+            // Try to detect terminal capabilities (Kitty/Sixel), fall back to Halfblocks
+            image_picker: Some(Picker::from_query_stdio().unwrap_or_else(|_| Picker::halfblocks())),
             theme: config::ThemeColors::from(&settings.theme),
         }
     }
@@ -1696,14 +1697,20 @@ impl App {
             return;
         }
 
-        let Some(ref picker) = self.image_picker else {
+        let Some(picker) = self.image_picker.clone() else {
             self.add_log(
-                "Terminal does not support image preview (try Kitty, WezTerm, or a sixel-capable terminal)"
-                    .into(),
+                "Terminal does not support image preview".into(),
                 LogLevel::Error,
             );
             return;
         };
+
+        let proto_type_str = format!("{:?}", picker.protocol_type());
+
+        self.add_log(
+            format!("Image preview protocol: {proto_type_str}"),
+            LogLevel::Info,
+        );
 
         match image::ImageReader::open(path) {
             Ok(reader) => match reader.decode() {
