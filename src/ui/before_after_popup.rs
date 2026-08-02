@@ -3,7 +3,6 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    prelude::Stylize,
     style::{Color, Style},
     widgets::{Block, Borders, Clear, Widget},
 };

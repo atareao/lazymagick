@@ -10,8 +10,6 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use ratatui::prelude::Stylize;
-
 use crate::config;
 use crate::{magick::ImageInfo, recipe::Recipe};
 
