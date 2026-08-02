@@ -22,11 +22,15 @@ jobs:
           components: clippy, rustfmt
           min-toolchain-version: "1.85"
 
-      - name: Install ImageMagick (Ubuntu)
+      - name: Install ImageMagick 7 (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:softvisio/imagemagick-7
+          sudo apt-get update
+          sudo apt-get install -y imagemagick-7
+          magick -version
 
       - name: Install ImageMagick (macOS)
         if: runner.os == 'macOS'
