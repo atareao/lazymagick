@@ -55,6 +55,8 @@ impl Widget for &HelpPopup {
             ("c", "Cancel running process", false),
             ("f", "Open format picker", false),
             ("e", "Edit output dir / extra args", false),
+            ("R", "Toggle recursive directory processing", false),
+            ("n", "Toggle dry-run mode", false),
             ("", "", false),
             ("── General ────────────────────", "", true),
             ("?", "Toggle this help", false),

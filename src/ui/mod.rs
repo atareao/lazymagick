@@ -141,18 +141,24 @@ fn render_title_bar(frame: &mut Frame, area: Rect, app: &App) {
 
 /// Render the bottom status bar with keybinding hints.
 fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
-    let hints = match app.mode {
-        Mode::Help => " [Help overlay]  ?/Esc: close ",
-        Mode::Edit => " [Edit popup]  Esc: cancel  Enter: confirm ",
+    let dry_run_hint = if app.dry_run { " [DRY-RUN]" } else { "" };
+    let recursive_hint = if app.recursive { " [RECURSIVE]" } else { "" };
+    let hints: String = match app.mode {
+        Mode::Help => " [Help overlay]  ?/Esc: close ".into(),
+        Mode::Edit => " [Edit popup]  Esc: cancel  Enter: confirm ".into(),
         Mode::Run => {
             if app.magick_handle.is_some() {
-                " [Running…]  c: cancel "
+                " [Running…]  c: cancel ".into()
             } else {
-                " [Browse]  1-4: Focus  Tab: Cycle  j/k: Move  r: Run  f: Format  ?: Help "
+                format!(
+                    " [1-4/Tab] Focus  [j/k] Move  [Space] Select  [r] Run  [f] Format{dry_run_hint}{recursive_hint}  [?] Help "
+                )
             }
         }
         Mode::Browse => {
-            " [1-4/Tab] Focus  [j/k] Move  [Space] Select  [r] Run  [f] Format  [?] Help "
+            format!(
+                " [1-4/Tab] Focus  [j/k] Move  [Space] Select  [r] Run  [f] Format{dry_run_hint}{recursive_hint}  [?] Help "
+            )
         }
     };
 

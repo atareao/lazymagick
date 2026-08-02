@@ -23,6 +23,10 @@ pub struct Cli {
     #[arg(long = "dry-run")]
     pub dry_run: bool,
 
+    /// Process files in subdirectories recursively.
+    #[arg(short = 'R', long = "recursive")]
+    pub recursive: bool,
+
     /// Input file paths / glob patterns (e.g. `*.png`, `photo.jpg`).
     pub paths: Vec<String>,
 }

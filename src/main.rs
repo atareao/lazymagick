@@ -147,7 +147,19 @@ fn run_headless(cli: cli::Cli) -> Result<()> {
         match glob::glob(pattern) {
             Ok(entries) => {
                 for entry in entries.flatten() {
-                    if entry.is_file() && fs_utils::is_image(&entry) {
+                    if cli.recursive && entry.is_dir() {
+                        // Walk subdirectories recursively
+                        for sub in walkdir::WalkDir::new(&entry)
+                            .follow_links(true)
+                            .into_iter()
+                            .filter_map(|e| e.ok())
+                        {
+                            let path = sub.path().to_path_buf();
+                            if path.is_file() && fs_utils::is_image(&path) {
+                                files.push(path);
+                            }
+                        }
+                    } else if entry.is_file() && fs_utils::is_image(&entry) {
                         files.push(entry);
                     }
                 }

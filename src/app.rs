@@ -265,6 +265,8 @@ pub struct App {
 
     /// Whether to perform a dry run (log commands only, no execution).
     pub dry_run: bool,
+    /// Whether to process files in subdirectories recursively.
+    pub recursive: bool,
 
     // -- Preview / image info ---------------------------------------
     /// Parsed image metadata from `magick identify`.
@@ -340,6 +342,7 @@ impl App {
             processing_queue_index: 0,
 
             dry_run: false,
+            recursive: false,
 
             preview_info: None,
             preview_error: None,
@@ -549,6 +552,15 @@ impl App {
                     "Dry-run mode enabled"
                 } else {
                     "Dry-run mode disabled"
+                };
+                self.add_log(msg.into(), LogLevel::Info);
+            }
+            KeyCode::Char('R') => {
+                self.recursive = !self.recursive;
+                let msg = if self.recursive {
+                    "Recursive mode enabled — processing subdirectories"
+                } else {
+                    "Recursive mode disabled"
                 };
                 self.add_log(msg.into(), LogLevel::Info);
             }
@@ -1103,14 +1115,41 @@ impl App {
         {
             let recipe = &self.recipes[recipe_idx];
             for file in &self.selected_files {
-                match self.build_command_for_file(recipe, file) {
-                    Some(job) => queue.push(job),
-                    None => {
-                        skipped.push(format!(
-                            "Skipping file (could not build command): {}",
-                            file.display()
-                        ));
+                if self.recursive && file.is_dir() {
+                    // Walk subdirectories recursively
+                    for entry in walkdir::WalkDir::new(file)
+                        .follow_links(true)
+                        .into_iter()
+                        .filter_map(|e| e.ok())
+                    {
+                        let path = entry.path().to_path_buf();
+                        if path.is_file() && fs_utils::is_image(&path) {
+                            match self.build_command_for_file(recipe, &path) {
+                                Some(job) => queue.push(job),
+                                None => {
+                                    skipped.push(format!(
+                                        "Skipping (could not build command): {}",
+                                        path.display()
+                                    ));
+                                }
+                            }
+                        }
                     }
+                } else if file.is_file() && fs_utils::is_image(file) {
+                    match self.build_command_for_file(recipe, file) {
+                        Some(job) => queue.push(job),
+                        None => {
+                            skipped.push(format!(
+                                "Skipping file (could not build command): {}",
+                                file.display()
+                            ));
+                        }
+                    }
+                } else {
+                    skipped.push(format!(
+                        "Skipping (not an image): {}",
+                        file.display()
+                    ));
                 }
             }
         }
