@@ -26,10 +26,15 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository -y ppa:softvisio/imagemagick-7
-          sudo apt-get update
-          sudo apt-get install -y imagemagick-7
+          sudo apt-get install -y libjpeg-dev libpng-dev libwebp-dev libheif-dev \
+            libraw-dev libtiff-dev libfreetype6-dev libfontconfig1-dev
+          curl -L -o /tmp/im7.tar.gz \
+            https://github.com/ImageMagick/ImageMagick/releases/download/7.1.2-35/ImageMagick-7.1.2-35.tar.gz
+          cd /tmp && tar xzf im7.tar.gz && cd ImageMagick-7.1.2-35
+          ./configure --prefix=/usr --enable-shared=yes --with-modules
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
           magick -version
 
       - name: Install ImageMagick (macOS)
