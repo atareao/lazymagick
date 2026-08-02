@@ -62,6 +62,7 @@ impl<'a> Widget for &HelpPopup<'a> {
             ("e", "Edit output dir / extra args", false),
             ("R", "Toggle recursive directory processing", false),
             ("b", "Toggle before/after comparison", false),
+            ("p", "Toggle image preview (Kitty/Sixel)", false),
             ("x", "Toggle EXIF metadata panel", false),
             ("u", "Toggle undo / revert list", false),
             ("n", "Toggle dry-run mode", false),

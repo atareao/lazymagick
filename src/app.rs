@@ -10,6 +10,8 @@ use std::time::Instant;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use ratatui_image::picker::Picker;
+
 use crate::config;
 use crate::fs_utils;
 use crate::magick::{self, CommandBuilder};
@@ -308,6 +310,14 @@ pub struct App {
     /// Comparison info (if any) from a processed file.
     pub before_after_info: Option<magick::BeforeAfterInfo>,
 
+    // -- Image preview ----------------------------------------------
+    /// Whether the image preview popup is visible.
+    pub show_image_preview: bool,
+    /// Encoded image protocol for the current preview (if any).
+    pub image_protocol: Option<ratatui_image::protocol::Protocol>,
+    /// Terminal capability detector (must outlive `image_protocol`).
+    pub image_picker: Option<Picker>,
+
     /// Parsed theme colors for the UI.
     pub theme: config::ThemeColors,
 }
@@ -400,6 +410,9 @@ impl App {
             undo_cursor: 0,
             show_before_after: false,
             before_after_info: None,
+            show_image_preview: false,
+            image_protocol: None,
+            image_picker: Picker::from_query_stdio().ok(),
             theme: config::ThemeColors::from(&settings.theme),
         }
     }
@@ -714,6 +727,11 @@ impl App {
                     self.before_after_info = None;
                     return;
                 }
+                if self.show_image_preview {
+                    self.show_image_preview = false;
+                    self.image_protocol = None;
+                    return;
+                }
             }
             KeyCode::Tab => {
                 self.focus = self.focus.next();
@@ -778,6 +796,15 @@ impl App {
                     && !self.show_undo_list =>
             {
                 self.toggle_before_after();
+                return;
+            }
+            KeyCode::Char('p')
+                if self.mode == Mode::Browse
+                    && !self.show_format_picker
+                    && !self.show_edit_popup
+                    && !self.show_undo_list =>
+            {
+                self.toggle_image_preview();
                 return;
             }
             _ => {}
@@ -1647,6 +1674,58 @@ impl App {
                     format!("Before/after comparison failed: {e}"),
                     LogLevel::Error,
                 );
+            }
+        }
+    }
+
+    /// Toggle the image preview popup for the selected file.
+    pub fn toggle_image_preview(&mut self) {
+        if self.show_image_preview {
+            self.show_image_preview = false;
+            self.image_protocol = None;
+            return;
+        }
+
+        let file = self.visible_entry_at(self.file_cursor);
+        let Some(ref path) = file else { return };
+        if !path.is_file() || !crate::fs_utils::is_image(path) {
+            self.add_log(
+                "No valid image file selected for preview".into(),
+                LogLevel::Error,
+            );
+            return;
+        }
+
+        let Some(ref picker) = self.image_picker else {
+            self.add_log(
+                "Terminal does not support image preview (try Kitty, WezTerm, or a sixel-capable terminal)"
+                    .into(),
+                LogLevel::Error,
+            );
+            return;
+        };
+
+        match image::ImageReader::open(path) {
+            Ok(reader) => match reader.decode() {
+                Ok(img) => {
+                    // Use 60×30 cells — large enough for a preview popup
+                    let cell_size = ratatui::layout::Size::new(60, 30);
+                    match picker.new_protocol(img, cell_size, ratatui_image::Resize::Fit(None)) {
+                        Ok(protocol) => {
+                            self.image_protocol = Some(protocol);
+                            self.show_image_preview = true;
+                        }
+                        Err(e) => {
+                            self.add_log(format!("Image encoding failed: {e}"), LogLevel::Error);
+                        }
+                    }
+                }
+                Err(e) => {
+                    self.add_log(format!("Failed to decode image: {e}"), LogLevel::Error);
+                }
+            },
+            Err(e) => {
+                self.add_log(format!("Failed to open image: {e}"), LogLevel::Error);
             }
         }
     }

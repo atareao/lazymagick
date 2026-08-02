@@ -20,38 +20,35 @@
   - Filtra por nombre, categoría y tags (case-insensitive)
   - `Esc` limpia, `Enter` selecciona el primer match
 
-## P2 — Media prioridad
+## P2 — Media prioridad ✅
 
-- [ ] **Output directory picker**
-  - En el edit popup, poder navegar a un directorio de salida
-  - Actualmente solo permite escribir la ruta a mano
+- [x] **Output directory picker**
+  - Ctrl+O para navegar directorio de salida desde edit popup
 
-- [ ] **Recursive directory processing**
-  - Flag para procesar archivos en subdirectorios
-  - Útil para lotes grandes
+- [x] **Recursive directory processing**
+  - Tecla `R` para procesar archivos en subdirectorios
 
-- [ ] **Progress bar real**
-  - Parsear salida `-monitor` de ImageMagick
-  - Mostrar barra de progreso en lugar de solo spinner
+- [x] **Progress bar real**
+  - Parseo de `-monitor` de ImageMagick con barra y porcentaje
 
-## P3 — Nice to have
+## P3 — Nice to have ✅
 
-- [ ] **Image preview in terminal**
-  - Mostrar miniatura vía protocolo Kitty / sixel
-  - Killer feature para herramienta de imágenes
+- [x] **Image preview in terminal**
+  - Tecla `p` para previsualizar imagen vía Kitty/Sixel/Halfblocks
+  - Usa `ratatui-image` con detección automática de protocolo
 
 - [x] **Before/after comparison**
   - Tecla `b` para ver comparativa lado a lado original vs procesado
   - Procesa copia temporal, respeta formato, directorio y args extra
 
-- [ ] **EXIF metadata panel**
-  - Mostrar metadatos EXIF adicionales (cámara, ISO, fecha, GPS)
+- [x] **EXIF metadata panel**
+  - Tecla `x` para ver metadatos de cámara, ISO, GPS, etc.
 
-- [ ] **Undo / revert**
-  - Borrar archivos generados con una tecla
+- [x] **Undo / revert**
+  - Tecla `u` para ver y borrar archivos generados
 
-- [ ] **Tema / colores personalizables**
-  - Permitir cambiar colores de la TUI vía settings.toml
+- [x] **Tema / colores personalizables**
+  - 16 tokens de color configurables vía `settings.toml`
 
 ---
 

@@ -18,6 +18,7 @@ pub mod exif_panel;
 pub mod file_panel;
 pub mod format_picker;
 pub mod help_popup;
+pub mod image_preview_popup;
 pub mod layout;
 pub mod log_panel;
 pub mod recipe_panel;
@@ -135,6 +136,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         && let Some(ref info) = app.before_after_info
     {
         before_after_popup::render(frame.area(), frame.buffer_mut(), info, &app.theme);
+    }
+
+    if app.show_image_preview
+        && let Some(ref protocol) = app.image_protocol
+    {
+        image_preview_popup::render(frame.area(), frame.buffer_mut(), protocol, &app.theme);
     }
 
     if app.show_help {
