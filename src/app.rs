@@ -1144,11 +1144,10 @@ impl App {
     }
 
     /// Refresh the current directory listing (e.g. after processing files).
+    /// Keeps the cursor position unchanged.
     pub fn refresh_file_listing(&mut self) {
         let listing = fs_utils::list_directory(&self.current_dir).unwrap_or_default();
         self.dir_listing = listing;
-        self.file_cursor = 0;
-        self.selected_files.clear();
         self.generate_preview();
     }
 
