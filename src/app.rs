@@ -196,6 +196,10 @@ pub struct App {
     pub selected_recipe_name: Option<String>,
     /// Current sort order for the recipe list.
     pub recipe_sort: SortOrder,
+    /// Current recipe filter text (empty = no filter).
+    pub recipe_filter: String,
+    /// Whether the user is currently typing a filter.
+    pub is_filtering: bool,
 
     // -- File browser -----------------------------------------------
     /// Current working directory in the file panel.
@@ -301,6 +305,8 @@ impl App {
             recipe_cursor: 0,
             selected_recipe_name: None,
             recipe_sort: SortOrder::default(),
+            recipe_filter: String::new(),
+            is_filtering: false,
 
             current_dir,
             dir_listing,
@@ -636,35 +642,79 @@ impl App {
 
     fn handle_recipe_focus(&mut self, key: KeyEvent) {
         match key.code {
-            KeyCode::Char('j') | KeyCode::Down => {
-                self.recipe_cursor = self
-                    .recipe_cursor
-                    .saturating_add(1)
-                    .min(self.recipes.len().saturating_sub(1));
+            KeyCode::Esc => {
+                if self.is_filtering {
+                    self.is_filtering = false;
+                    self.recipe_filter.clear();
+                }
             }
-            KeyCode::Char('k') | KeyCode::Up => {
-                self.recipe_cursor = self.recipe_cursor.saturating_sub(1);
+            KeyCode::Enter if self.is_filtering && !self.recipe_filter.is_empty() => {
+                // Select the first matching recipe
+                let filtered = self.filtered_recipes();
+                if let Some(&recipe) = filtered.first() {
+                    self.selected_recipe_name = Some(recipe.name.clone());
+                    self.update_available_formats();
+                    self.generate_preview();
+                }
+                self.is_filtering = false;
             }
-            KeyCode::Enter if !self.recipes.is_empty() => {
-                let name = self.recipes[self.recipe_cursor].name.clone();
-                self.selected_recipe_name = Some(name);
-                self.update_available_formats();
-                self.generate_preview();
-            }
-            KeyCode::Char('g') => {
+            KeyCode::Char(c)
+                if !self.is_filtering
+                    && (c.is_alphanumeric() || c == '/' || c == '-' || c == ' ' || c == '.') =>
+            {
+                self.is_filtering = true;
+                self.recipe_filter.push(c);
                 self.recipe_cursor = 0;
             }
-            KeyCode::Char('G') => {
-                self.recipe_cursor = self.recipes.len().saturating_sub(1);
+            KeyCode::Backspace if self.is_filtering => {
+                self.recipe_filter.pop();
+                self.recipe_cursor = 0;
+                if self.recipe_filter.is_empty() {
+                    self.is_filtering = false;
+                }
             }
-            KeyCode::PageUp | KeyCode::Char('u') if key.modifiers == KeyModifiers::CONTROL => {
-                self.recipe_cursor = self.recipe_cursor.saturating_sub(10);
+            KeyCode::Char(c) if self.is_filtering => {
+                self.recipe_filter.push(c);
+                self.recipe_cursor = 0;
             }
-            KeyCode::PageDown | KeyCode::Char('d') if key.modifiers == KeyModifiers::CONTROL => {
-                self.recipe_cursor = self
-                    .recipe_cursor
-                    .saturating_add(10)
-                    .min(self.recipes.len().saturating_sub(1));
+            _ if !self.is_filtering => {
+                let filtered_len = self.filtered_recipes().len();
+                let max_idx = filtered_len.saturating_sub(1);
+                match key.code {
+                    KeyCode::Char('j') | KeyCode::Down => {
+                        self.recipe_cursor =
+                            self.recipe_cursor.saturating_add(1).min(max_idx);
+                    }
+                    KeyCode::Char('k') | KeyCode::Up => {
+                        self.recipe_cursor = self.recipe_cursor.saturating_sub(1);
+                    }
+                    KeyCode::Enter if !self.recipes.is_empty() => {
+                        if let Some(real_idx) = self.filtered_recipe_index(self.recipe_cursor) {
+                            let name = self.recipes[real_idx].name.clone();
+                            self.selected_recipe_name = Some(name);
+                            self.update_available_formats();
+                            self.generate_preview();
+                        }
+                    }
+                    KeyCode::Char('g') => {
+                        self.recipe_cursor = 0;
+                    }
+                    KeyCode::Char('G') => {
+                        self.recipe_cursor = max_idx;
+                    }
+                    KeyCode::PageUp | KeyCode::Char('u')
+                        if key.modifiers == KeyModifiers::CONTROL =>
+                    {
+                        self.recipe_cursor = self.recipe_cursor.saturating_sub(10);
+                    }
+                    KeyCode::PageDown | KeyCode::Char('d')
+                        if key.modifiers == KeyModifiers::CONTROL =>
+                    {
+                        self.recipe_cursor =
+                            self.recipe_cursor.saturating_add(10).min(max_idx);
+                    }
+                    _ => {}
+                }
             }
             _ => {}
         }
@@ -884,6 +934,38 @@ impl App {
         }
         // Re-clamp cursor
         self.recipe_cursor = self.recipe_cursor.min(self.recipes.len().saturating_sub(1));
+    }
+
+    /// Return recipes matching the current filter.
+    ///
+    /// When `recipe_filter` is empty, returns all recipes (unfiltered).
+    /// Otherwise, matches case-insensitively against name, category, and tags.
+    pub fn filtered_recipes(&self) -> Vec<&Recipe> {
+        if self.recipe_filter.is_empty() {
+            return self.recipes.iter().collect();
+        }
+
+        let filter = self.recipe_filter.to_lowercase();
+        self.recipes
+            .iter()
+            .filter(|r| {
+                r.name.to_lowercase().contains(&filter)
+                    || r.category
+                        .as_deref()
+                        .is_some_and(|c| c.to_lowercase().contains(&filter))
+                    || r.tags.iter().any(|t| t.to_lowercase().contains(&filter))
+            })
+            .collect()
+    }
+
+    /// Translate a cursor position into the real recipe index based on the filter.
+    ///
+    /// Returns `None` if the cursor is out of range or no recipes match.
+    pub fn filtered_recipe_index(&self, cursor: usize) -> Option<usize> {
+        let filtered = self.filtered_recipes();
+        filtered.get(cursor).and_then(|&r| {
+            self.recipes.iter().position(|x| std::ptr::eq(x, r))
+        })
     }
 
     // ── Format picker ─────────────────────────────────────────────

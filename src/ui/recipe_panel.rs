@@ -1,4 +1,4 @@
-//! Recipe list panel — displays available recipes with categories, usage, and sort indicator.
+//! Recipe list panel — displays available recipes with categories, usage, sort, and filter support.
 
 use ratatui::{
     buffer::Buffer,
@@ -24,6 +24,10 @@ pub struct RecipePanel<'a> {
     pub sort_order: SortOrder,
     /// Whether dry-run mode is active.
     pub dry_run: bool,
+    /// Current filter text (empty = no filter).
+    pub filter: &'a str,
+    /// Whether the user is actively typing a filter.
+    pub is_filtering: bool,
 }
 
 impl<'a> Widget for &RecipePanel<'a> {
@@ -44,16 +48,44 @@ impl<'a> Widget for &RecipePanel<'a> {
             SortOrder::Category => "by cat",
         };
         let dry_run_label = if self.dry_run { " [DRY RUN]" } else { "" };
+        let filter_label = if self.is_filtering || !self.filter.is_empty() {
+            format!("[/{}]", self.filter)
+        } else {
+            String::new()
+        };
 
         let block = Block::default()
-            .title(format!(" 1: Recipes [{sort_label}]{dry_run_label} "))
+            .title(format!(
+                " 1: Recipes [{sort_label}]{dry_run_label}{filter_label} "
+            ))
             .borders(Borders::ALL)
             .border_style(Style::default().fg(border_color));
         let inner = block.inner(area);
         block.render(area, buf);
 
-        if self.recipes.is_empty() {
-            let text = " No recipes loaded ";
+        // Build filtered view
+        let filtered: Vec<&Recipe> = if self.filter.is_empty() {
+            self.recipes.iter().collect()
+        } else {
+            let filter_lower = self.filter.to_lowercase();
+            self.recipes
+                .iter()
+                .filter(|r| {
+                    r.name.to_lowercase().contains(&filter_lower)
+                        || r.category
+                            .as_deref()
+                            .is_some_and(|c| c.to_lowercase().contains(&filter_lower))
+                        || r.tags.iter().any(|t| t.to_lowercase().contains(&filter_lower))
+                })
+                .collect()
+        };
+
+        if filtered.is_empty() {
+            let text = if self.filter.is_empty() {
+                " No recipes loaded "
+            } else {
+                " No matching recipes "
+            };
             buf.set_string(
                 inner.x + 1,
                 inner.y + 1,
@@ -68,8 +100,7 @@ impl<'a> Widget for &RecipePanel<'a> {
             .cursor
             .saturating_sub(available_height.saturating_sub(1));
 
-        for i in scroll_offset..self.recipes.len().min(scroll_offset + available_height) {
-            let recipe = &self.recipes[i];
+        for (i, recipe) in filtered.iter().enumerate().skip(scroll_offset).take(available_height) {
             let y = inner.y + (i - scroll_offset) as u16;
             if y >= inner.y + inner.height {
                 break;

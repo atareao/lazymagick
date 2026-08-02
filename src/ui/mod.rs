@@ -27,13 +27,16 @@ pub fn render(frame: &mut Frame, app: &App) {
     render_title_bar(frame, areas.title_bar, app);
 
     // ── Recipe panel ─────────────────────────────────────────────
+    let filtered_count = app.filtered_recipes().len();
     let recipe_widget = recipe_panel::RecipePanel {
         recipes: &app.recipes,
-        cursor: app.recipe_cursor,
+        cursor: app.recipe_cursor.min(filtered_count.saturating_sub(1)),
         selected: app.selected_recipe_name.as_deref(),
         focused: app.focus == Focus::Recipe,
         sort_order: app.recipe_sort,
         dry_run: app.dry_run,
+        filter: &app.recipe_filter,
+        is_filtering: app.is_filtering,
     };
     frame.render_widget(&recipe_widget, areas.recipe_panel);
 
