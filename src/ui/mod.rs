@@ -62,6 +62,10 @@ pub fn render(frame: &mut Frame, app: &App) {
         preview_error: app.preview_error.as_deref(),
         focused: app.focus == Focus::Command,
         selected_file_count: app.selected_files.len(),
+        is_running: app.magick_handle.is_some(),
+        progress_current: app.progress_current,
+        progress_total: app.progress_total,
+        progress_stage: app.progress_stage.clone(),
     };
     frame.render_widget(&command_widget, areas.command_panel);
 

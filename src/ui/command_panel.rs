@@ -1,5 +1,5 @@
 //! Command preview panel — shows the generated `magick` command, input/output paths,
-//! image metadata, file count, and format override.
+//! image metadata, file count, format override, and real-time progress bar.
 
 use std::path::Path;
 
@@ -30,6 +30,14 @@ pub struct CommandPanel<'a> {
     pub focused: bool,
     /// Number of selected files for batch processing.
     pub selected_file_count: usize,
+    /// Whether a magick process is currently running.
+    pub is_running: bool,
+    /// Current progress numerator (from `-monitor`).
+    pub progress_current: u64,
+    /// Current progress denominator (from `-monitor`).
+    pub progress_total: u64,
+    /// Current processing stage name.
+    pub progress_stage: String,
 }
 
 impl<'a> Widget for &CommandPanel<'a> {
@@ -57,6 +65,45 @@ impl<'a> Widget for &CommandPanel<'a> {
 
         let mut y = inner.y + 1;
         let width = inner.width.saturating_sub(2) as usize;
+
+        // ── Progress bar (shown when a process is running) ─────────
+        if self.is_running && self.progress_total > 0 {
+            let bar_width = width.min(40);
+            let progress =
+                (self.progress_current as f64 / self.progress_total as f64).clamp(0.0, 1.0);
+            let filled = (progress * bar_width as f64) as usize;
+            let empty = bar_width.saturating_sub(filled);
+
+            // Stage name
+            if !self.progress_stage.is_empty() && y < inner.y + inner.height - 1 {
+                buf.set_string(
+                    inner.x + 1,
+                    y,
+                    format!(" {}", self.progress_stage),
+                    Style::default().fg(Color::Cyan),
+                );
+                y += 1;
+            }
+
+            // Progress bar
+            if y < inner.y + inner.height - 1 {
+                let pct_str = format!(" {:3.0}%", progress * 100.0);
+                let max_bar_chars = inner
+                    .width
+                    .saturating_sub(2)
+                    .saturating_sub(pct_str.len() as u16)
+                    as usize;
+                let display_filled = filled.min(max_bar_chars);
+                let display_empty = empty.min(max_bar_chars.saturating_sub(display_filled));
+                let bar_line: String = std::iter::repeat_n('█', display_filled)
+                    .chain(std::iter::repeat_n('░', display_empty))
+                    .chain(pct_str.chars())
+                    .collect();
+                buf.set_string(inner.x + 1, y, &bar_line, Style::default().fg(Color::Cyan));
+                y += 1;
+            }
+            y += 1;
+        }
 
         // ── Recipe info ──────────────────────────────────────────
         if let Some(recipe) = self.recipe {

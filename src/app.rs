@@ -255,6 +255,12 @@ pub struct App {
     /// Whether the spinner animation is active.
     pub spinner_active: bool,
     /// Accumulated process stderr output.
+    /// Parsed progress from magick `-monitor` stderr.
+    pub progress_current: u64,
+    /// Total units for progress bar.
+    pub progress_total: u64,
+    /// Name of the current processing stage.
+    pub progress_stage: String,
     pub process_output: String,
 
     // -- Processing queue -------------------------------------------
@@ -336,6 +342,9 @@ impl App {
             magick_handle: None,
             spinner_frame: 0,
             spinner_active: false,
+            progress_current: 0,
+            progress_total: 0,
+            progress_stage: String::new(),
             process_output: String::new(),
 
             processing_queue: Vec::new(),
@@ -362,6 +371,21 @@ impl App {
         if let Some(ref mut handle) = self.magick_handle {
             // Drain any available stderr output directly via handle
             while let Ok(line) = handle.rx.try_recv() {
+                // Parse progress inline to avoid borrow conflict
+                if let (Some(data), Some(op)) = (
+                    line.split("]: ").nth(1),
+                    line.split('[').next().filter(|s| !s.is_empty()),
+                ) {
+                    if let Some(frac) = data.split_whitespace().next()
+                        && let Some((cur_str, tot_str)) = frac.split_once('/')
+                    {
+                        let cur = cur_str.parse::<f64>().unwrap_or(0.0);
+                        let tot = tot_str.parse::<f64>().unwrap_or(1.0);
+                        self.progress_current = (cur * 100.0) as u64;
+                        self.progress_total = (tot * 100.0) as u64;
+                    }
+                    self.progress_stage = op.trim().to_string();
+                }
                 if !self.process_output.is_empty() {
                     self.process_output.push('\n');
                 }
@@ -377,6 +401,20 @@ impl App {
 
                     // Drain any remaining output directly
                     while let Ok(line) = handle.rx.try_recv() {
+                        if let (Some(data), Some(op)) = (
+                            line.split("]: ").nth(1),
+                            line.split('[').next().filter(|s| !s.is_empty()),
+                        ) {
+                            if let Some(frac) = data.split_whitespace().next()
+                                && let Some((cur_str, tot_str)) = frac.split_once('/')
+                            {
+                                let cur = cur_str.parse::<f64>().unwrap_or(0.0);
+                                let tot = tot_str.parse::<f64>().unwrap_or(1.0);
+                                self.progress_current = (cur * 100.0) as u64;
+                                self.progress_total = (tot * 100.0) as u64;
+                            }
+                            self.progress_stage = op.trim().to_string();
+                        }
                         if !self.process_output.is_empty() {
                             self.process_output.push('\n');
                         }
@@ -1067,6 +1105,7 @@ impl App {
             .collect();
 
         let mut argv = CommandBuilder::build_argv(input, &recipe_args, &[], &safe_output);
+        argv.insert(1, "-monitor".to_string());
         argv.extend(extra_args);
 
         Some(ProcessingJob {
@@ -1146,10 +1185,7 @@ impl App {
                         }
                     }
                 } else {
-                    skipped.push(format!(
-                        "Skipping (not an image): {}",
-                        file.display()
-                    ));
+                    skipped.push(format!("Skipping (not an image): {}", file.display()));
                 }
             }
         }
@@ -1208,6 +1244,9 @@ impl App {
         self.spinner_active = true;
         self.spinner_frame = 0;
         self.process_output.clear();
+        self.progress_current = 0;
+        self.progress_total = 0;
+        self.progress_stage.clear();
 
         match self.spawn_magick(&argv) {
             Ok(handle) => {
