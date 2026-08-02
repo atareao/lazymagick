@@ -204,7 +204,14 @@ impl<'a> Widget for &FilePanel<'a> {
                 (pre, format!("{filename}{size_str}"))
             };
 
-            buf.set_string(inner.x + 1, y, format!("{prefix}{suffix}"), style);
+            let text = format!("{prefix}{suffix}");
+            let max_width = inner.width.saturating_sub(3) as usize;
+            let display = if text.len() > max_width {
+                format!("{}…", &text[..max_width.saturating_sub(1)])
+            } else {
+                text
+            };
+            buf.set_string(inner.x + 1, y, display, style);
         }
     }
 }

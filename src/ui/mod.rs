@@ -59,23 +59,40 @@ pub fn render(frame: &mut Frame, app: &App) {
     };
     frame.render_widget(&file_widget, areas.file_panel);
 
-    // ── Command preview panel ────────────────────────────────────
-    let cursor_file = app.cursor_file();
-    let command_widget = command_panel::CommandPanel {
-        recipe: app.selected_recipe(),
-        input_file: cursor_file.as_deref(),
-        format_override: app.format_override.as_deref(),
-        preview_info: app.preview_info.as_ref(),
-        preview_error: app.preview_error.as_deref(),
-        focused: app.focus == Focus::Command,
-        selected_file_count: app.selected_files.len(),
-        is_running: app.magick_handle.is_some(),
-        progress_current: app.progress_current,
-        progress_total: app.progress_total,
-        progress_stage: app.progress_stage.clone(),
-        theme: &app.theme,
-    };
-    frame.render_widget(&command_widget, areas.command_panel);
+    // ── Command preview panel (or image preview) ────────────────
+    if app.show_image_preview
+        && let Some(ref protocol) = app.image_protocol
+    {
+        image_preview_popup::render(
+            areas.command_panel,
+            frame.buffer_mut(),
+            protocol,
+            &app.theme,
+        );
+    } else if app.show_image_preview {
+        image_preview_popup::render_placeholder(
+            areas.command_panel,
+            frame.buffer_mut(),
+            &app.theme,
+        );
+    } else {
+        let cursor_file = app.cursor_file();
+        let command_widget = command_panel::CommandPanel {
+            recipe: app.selected_recipe(),
+            input_file: cursor_file.as_deref(),
+            format_override: app.format_override.as_deref(),
+            preview_info: app.preview_info.as_ref(),
+            preview_error: app.preview_error.as_deref(),
+            focused: app.focus == Focus::Command,
+            selected_file_count: app.selected_files.len(),
+            is_running: app.magick_handle.is_some(),
+            progress_current: app.progress_current,
+            progress_total: app.progress_total,
+            progress_stage: app.progress_stage.clone(),
+            theme: &app.theme,
+        };
+        frame.render_widget(&command_widget, areas.command_panel);
+    }
 
     // ── Log panel ────────────────────────────────────────────────
     let log_widget = log_panel::LogPanel {
@@ -136,12 +153,6 @@ pub fn render(frame: &mut Frame, app: &App) {
         && let Some(ref info) = app.before_after_info
     {
         before_after_popup::render(frame.area(), frame.buffer_mut(), info, &app.theme);
-    }
-
-    if app.show_image_preview
-        && let Some(ref protocol) = app.image_protocol
-    {
-        image_preview_popup::render(frame.area(), frame.buffer_mut(), protocol, &app.theme);
     }
 
     if app.show_help {
