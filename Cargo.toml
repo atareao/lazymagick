@@ -2,7 +2,14 @@
 name = "lazymagick"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 description = "A TUI for ImageMagick — compose and run magick recipes interactively"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/atareao/lazymagick"
+homepage = "https://github.com/atareao/lazymagick"
+keywords = ["imagemagick", "tui", "image-processing", "ratatui", "cli"]
+categories = ["command-line-utilities", "multimedia::images"]
 
 [dependencies]
 ratatui = "0.30"
