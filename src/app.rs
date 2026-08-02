@@ -1021,7 +1021,12 @@ impl App {
 
     /// Return the number of visible entries in the file panel.
     fn file_visible_count(&self) -> usize {
-        Self::count_visible(&self.dir_listing, self.show_hidden)
+        let parent_extra = if self.current_dir.parent().is_some() {
+            1
+        } else {
+            0
+        };
+        parent_extra + Self::count_visible(&self.dir_listing, self.show_hidden)
     }
 
     fn count_visible(listing: &fs_utils::DirListing, show_hidden: bool) -> usize {
@@ -1050,13 +1055,23 @@ impl App {
     }
 
     /// Get the path at the given visible-index cursor.
+    /// Index 0 is the parent directory (../) when available.
     fn visible_entry_at(&self, cursor: usize) -> Option<PathBuf> {
+        let mut idx = 0;
+
+        // Parent directory entry (synthetic ../)
+        if self.current_dir.parent().is_some() {
+            if idx == cursor {
+                return Some(self.current_dir.clone());
+            }
+            idx += 1;
+        }
+
         let is_hidden = |p: &PathBuf| {
             p.file_name()
                 .is_some_and(|n| n.to_string_lossy().starts_with('.'))
         };
 
-        let mut idx = 0;
         for dir in &self.dir_listing.directories {
             if self.show_hidden || !is_hidden(dir) {
                 if idx == cursor {
@@ -1136,9 +1151,13 @@ impl App {
     }
 
     /// Toggle the selection state of the file under the cursor.
+    /// Skips directories — only image/other files can be selected.
     pub fn toggle_file_selection(&mut self) {
         if let Some(path) = self.visible_entry_at(self.file_cursor) {
-            self.toggle_file_selection_for(path);
+            // Don't toggle directories (../ or regular dirs)
+            if !path.is_dir() {
+                self.toggle_file_selection_for(path);
+            }
         }
     }
 
