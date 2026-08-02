@@ -292,6 +292,14 @@ pub struct App {
     pub exif_info: Option<magick::ExifInfo>,
     /// Whether to show the EXIF panel overlay.
     pub show_exif: bool,
+
+    // -- Undo / Revert ---------------------------------------------
+    /// List of previously generated output files (for undo).
+    pub generated_outputs: Vec<PathBuf>,
+    /// Whether the undo list popup is visible.
+    pub show_undo_list: bool,
+    /// Cursor in the undo list.
+    pub undo_cursor: usize,
 }
 
 impl App {
@@ -375,6 +383,9 @@ impl App {
             preview_error: None,
             exif_info: None,
             show_exif: false,
+            generated_outputs: Vec::new(),
+            show_undo_list: false,
+            undo_cursor: 0,
         }
     }
 
@@ -444,6 +455,10 @@ impl App {
                     self.spinner_active = false;
 
                     if status.success() {
+                        // Track output for undo
+                        if let Some(job) = self.processing_queue.get(self.processing_queue_index) {
+                            self.generated_outputs.push(job.output.clone());
+                        }
                         self.add_log(
                             format!(
                                 "[{}] {} completed successfully",
@@ -501,6 +516,57 @@ impl App {
 
     /// Handle a key event. Dispatches based on `self.mode` and `self.focus`.
     pub fn on_key(&mut self, key: KeyEvent) {
+        // Undo list popup — handles keys before any other dispatch
+        if self.show_undo_list {
+            match key.code {
+                KeyCode::Char('j') | KeyCode::Down => {
+                    self.undo_cursor = self
+                        .undo_cursor
+                        .saturating_add(1)
+                        .min(self.generated_outputs.len().saturating_sub(1));
+                }
+                KeyCode::Char('k') | KeyCode::Up => {
+                    self.undo_cursor = self.undo_cursor.saturating_sub(1);
+                }
+                KeyCode::Enter | KeyCode::Char('d') => {
+                    if !self.generated_outputs.is_empty() {
+                        let idx = self
+                            .undo_cursor
+                            .min(self.generated_outputs.len().saturating_sub(1));
+                        let path = &self.generated_outputs[idx];
+                        match std::fs::remove_file(path) {
+                            Ok(_) => {
+                                self.add_log(
+                                    format!("Deleted: {}", path.display()),
+                                    LogLevel::Info,
+                                );
+                                self.generated_outputs.remove(idx);
+                                self.undo_cursor = self
+                                    .undo_cursor
+                                    .min(self.generated_outputs.len().saturating_sub(1));
+                            }
+                            Err(e) => {
+                                self.add_log(
+                                    format!("Failed to delete {}: {e}", path.display()),
+                                    LogLevel::Error,
+                                );
+                            }
+                        }
+                    }
+                }
+                KeyCode::Char('c') => {
+                    self.generated_outputs.clear();
+                    self.undo_cursor = 0;
+                    self.add_log("Undo list cleared".into(), LogLevel::Info);
+                }
+                KeyCode::Esc => {
+                    self.show_undo_list = false;
+                }
+                _ => {}
+            }
+            return;
+        }
+
         // Mode-specific dispatch
         match self.mode {
             Mode::Help => {
@@ -680,6 +746,10 @@ impl App {
                     self.exif_info = magick::CommandBuilder::identify_exif(&file).ok();
                     self.show_exif = true;
                 }
+            }
+            KeyCode::Char('u') => {
+                self.show_undo_list = !self.show_undo_list;
+                self.undo_cursor = 0;
             }
             _ => {}
         }

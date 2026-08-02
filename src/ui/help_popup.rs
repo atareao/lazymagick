@@ -57,6 +57,7 @@ impl Widget for &HelpPopup {
             ("e", "Edit output dir / extra args", false),
             ("R", "Toggle recursive directory processing", false),
             ("x", "Toggle EXIF metadata panel", false),
+            ("u", "Toggle undo / revert list", false),
             ("n", "Toggle dry-run mode", false),
             ("", "", false),
             ("── General ────────────────────", "", true),

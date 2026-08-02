@@ -20,6 +20,7 @@ pub mod help_popup;
 pub mod layout;
 pub mod log_panel;
 pub mod recipe_panel;
+pub mod undo_popup;
 
 /// Render the entire TUI for the current frame.
 pub fn render(frame: &mut Frame, app: &App) {
@@ -125,6 +126,16 @@ pub fn render(frame: &mut Frame, app: &App) {
     if app.show_help {
         let help = help_popup::HelpPopup;
         frame.render_widget(&help, frame.area());
+    }
+
+    // Undo list overlay
+    if app.show_undo_list {
+        undo_popup::render(
+            frame.area(),
+            frame.buffer_mut(),
+            &app.generated_outputs,
+            app.undo_cursor,
+        );
     }
 }
 
