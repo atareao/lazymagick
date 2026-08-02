@@ -499,6 +499,7 @@ impl App {
                             ),
                             LogLevel::Success,
                         );
+                        self.refresh_file_listing();
                     } else {
                         self.add_log(
                             format!(
@@ -525,6 +526,7 @@ impl App {
                             format!("Batch complete: {count} file(s) processed"),
                             LogLevel::Success,
                         );
+                        self.refresh_file_listing();
                         self.mode = Mode::Browse;
                     }
                 }
@@ -1139,6 +1141,15 @@ impl App {
             self.selected_files.clear();
             self.generate_preview();
         }
+    }
+
+    /// Refresh the current directory listing (e.g. after processing files).
+    pub fn refresh_file_listing(&mut self) {
+        let listing = fs_utils::list_directory(&self.current_dir).unwrap_or_default();
+        self.dir_listing = listing;
+        self.file_cursor = 0;
+        self.selected_files.clear();
+        self.generate_preview();
     }
 
     /// Toggle the selected state of a file.
