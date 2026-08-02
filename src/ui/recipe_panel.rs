@@ -59,7 +59,7 @@ impl<'a> Widget for &RecipePanel<'a> {
 
         let block = Block::default()
             .title(format!(
-                " 1: Recipes [{sort_label}]{dry_run_label}{filter_label} "
+                " 2: Recipes [{sort_label}]{dry_run_label}{filter_label} "
             ))
             .borders(Borders::ALL)
             .border_style(Style::default().fg(border_color));

@@ -100,7 +100,7 @@ impl<'a> Widget for &FilePanel<'a> {
         };
 
         let dir_display = self.current_dir.display().to_string();
-        let title = format!(" 2: Files [{}] ", dir_display);
+        let title = format!(" 1: Files [{}] ", dir_display);
 
         let block = Block::default()
             .title(title)

@@ -103,13 +103,13 @@ pub enum Focus {
 }
 
 impl Focus {
-    /// Cycle to the next panel (Recipe → File → Command → Log → Recipe).
+    /// Cycle to the next panel (File → Recipe → Command → Log → File).
     pub fn next(self) -> Self {
         match self {
-            Focus::Recipe => Focus::File,
-            Focus::File => Focus::Command,
+            Focus::File => Focus::Recipe,
+            Focus::Recipe => Focus::Command,
             Focus::Command => Focus::Log,
-            Focus::Log => Focus::Recipe,
+            Focus::Log => Focus::File,
         }
     }
 }
@@ -350,7 +350,7 @@ impl App {
             mode: Mode::default(),
             should_quit: false,
             last_tick: Instant::now(),
-            focus: Focus::Recipe,
+            focus: Focus::File,
 
             recipes,
             recipe_cursor: 0,
@@ -741,14 +741,14 @@ impl App {
             }
             KeyCode::BackTab => {
                 self.focus = match self.focus {
-                    Focus::Recipe => Focus::Log,
-                    Focus::File => Focus::Recipe,
-                    Focus::Command => Focus::File,
+                    Focus::File => Focus::Log,
+                    Focus::Recipe => Focus::File,
+                    Focus::Command => Focus::Recipe,
                     Focus::Log => Focus::Command,
                 };
             }
-            KeyCode::Char('1') => self.focus = Focus::Recipe,
-            KeyCode::Char('2') => self.focus = Focus::File,
+            KeyCode::Char('1') => self.focus = Focus::File,
+            KeyCode::Char('2') => self.focus = Focus::Recipe,
             KeyCode::Char('3') => self.focus = Focus::Command,
             KeyCode::Char('4') => self.focus = Focus::Log,
             KeyCode::Char('s') => {

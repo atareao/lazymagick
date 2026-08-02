@@ -72,16 +72,16 @@ pub fn chunk_areas(area: Rect) -> LayoutAreas {
     let left_column = horizontal[0];
     let right_column = horizontal[1];
 
-    // Split left column: recipe (40%) | files (60%)
+    // Split left column: files (60%) | recipe (40%)
     let left_split = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(left_column);
 
     LayoutAreas {
         title_bar,
-        recipe_panel: left_split[0],
-        file_panel: left_split[1],
+        recipe_panel: left_split[1],
+        file_panel: left_split[0],
         command_panel: right_column,
         log_panel,
         status_bar,
