@@ -1708,8 +1708,8 @@ impl App {
         match image::ImageReader::open(path) {
             Ok(reader) => match reader.decode() {
                 Ok(img) => {
-                    // Use 60×30 cells — large enough for a preview popup
-                    let cell_size = ratatui::layout::Size::new(60, 30);
+                    // ~40×20 cells to fit the command panel area (~35% width)
+                    let cell_size = ratatui::layout::Size::new(40, 20);
                     match picker.new_protocol(img, cell_size, ratatui_image::Resize::Fit(None)) {
                         Ok(protocol) => {
                             self.image_protocol = Some(protocol);

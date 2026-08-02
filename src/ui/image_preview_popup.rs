@@ -1,8 +1,5 @@
-//! Image preview widget — renders an image in the command panel slot
-//! via Kitty/Sixel/Halfblocks.
-//!
-//! Uses `ratatui-image` to auto-detect the best available protocol and render
-//! the image inside a bordered panel.
+//! Image preview panel — renders an image in the command panel slot
+//! using Halfblocks protocol (works in any terminal with 24-bit color).
 
 use ratatui::{
     Frame,
@@ -16,8 +13,8 @@ use crate::config::ThemeColors;
 
 /// Render an image preview inside a fixed-area bordered panel.
 ///
-/// `area` is the exact rectangle to draw into (typically `areas.command_panel`).
-/// The image is fitted inside the border with aspect ratio preserved.
+/// IMPORTANT: `allow_clipping(true)` is required — without it the image
+/// won't render if the available area is smaller than the protocol size.
 pub fn render(
     frame: &mut Frame,
     area: Rect,
@@ -39,19 +36,21 @@ pub fn render(
         return;
     }
 
-    // Render the image fitted inside the inner area
-    frame.render_widget(Image::new(protocol), inner);
+    // allow_clipping is critical — without it the image is invisible
+    // when the render area is smaller than the protocol size
+    frame.render_widget(Image::new(protocol).allow_clipping(true), inner);
 
-    // Close hint at the bottom
-    let hint = " [p] Close  ";
-    let hint_x = inner.x + 1;
-    let hint_y = inner.y + inner.height.saturating_sub(1);
-    frame
-        .buffer_mut()
-        .set_string(hint_x, hint_y, hint, Style::default().fg(theme.dim_text_fg));
+    // Bottom close hint
+    let hint = " [p/Esc] Close ";
+    frame.buffer_mut().set_string(
+        inner.x + 1,
+        inner.y + inner.height.saturating_sub(1),
+        hint,
+        Style::default().fg(theme.dim_text_fg),
+    );
 }
 
-/// Render a placeholder when no image is loaded for preview.
+/// Placeholder shown when toggling preview without a loaded image.
 pub fn render_placeholder(frame: &mut Frame, area: Rect, theme: &ThemeColors) {
     if area.is_empty() {
         return;
@@ -60,7 +59,7 @@ pub fn render_placeholder(frame: &mut Frame, area: Rect, theme: &ThemeColors) {
     let block = Block::default()
         .title(" 3: Image Preview ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(theme.border_unfocused));
+        .border_style(Style::default().fg(theme.accent_fg));
     let inner = block.inner(area);
     frame.render_widget(&block, area);
 
