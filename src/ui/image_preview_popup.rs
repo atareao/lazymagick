@@ -5,10 +5,10 @@
 //! the image inside a bordered panel.
 
 use ratatui::{
-    buffer::Buffer,
+    Frame,
     layout::Rect,
     style::Style,
-    widgets::{Block, Borders, Widget},
+    widgets::{Block, Borders},
 };
 use ratatui_image::Image;
 
@@ -19,8 +19,8 @@ use crate::config::ThemeColors;
 /// `area` is the exact rectangle to draw into (typically `areas.command_panel`).
 /// The image is fitted inside the border with aspect ratio preserved.
 pub fn render(
+    frame: &mut Frame,
     area: Rect,
-    buf: &mut Buffer,
     protocol: &ratatui_image::protocol::Protocol,
     theme: &ThemeColors,
 ) {
@@ -33,25 +33,26 @@ pub fn render(
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.accent_fg));
     let inner = block.inner(area);
-    block.render(area, buf);
+    frame.render_widget(&block, area);
 
     if inner.is_empty() || inner.height < 2 {
         return;
     }
 
     // Render the image fitted inside the inner area
-    let image = Image::new(protocol);
-    image.render(inner, buf);
+    frame.render_widget(Image::new(protocol), inner);
 
     // Close hint at the bottom
     let hint = " [p] Close  ";
     let hint_x = inner.x + 1;
     let hint_y = inner.y + inner.height.saturating_sub(1);
-    buf.set_string(hint_x, hint_y, hint, Style::default().fg(theme.dim_text_fg));
+    frame
+        .buffer_mut()
+        .set_string(hint_x, hint_y, hint, Style::default().fg(theme.dim_text_fg));
 }
 
 /// Render a placeholder when no image is loaded for preview.
-pub fn render_placeholder(area: Rect, buf: &mut Buffer, theme: &ThemeColors) {
+pub fn render_placeholder(frame: &mut Frame, area: Rect, theme: &ThemeColors) {
     if area.is_empty() {
         return;
     }
@@ -61,14 +62,14 @@ pub fn render_placeholder(area: Rect, buf: &mut Buffer, theme: &ThemeColors) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.border_unfocused));
     let inner = block.inner(area);
-    block.render(area, buf);
+    frame.render_widget(&block, area);
 
     if inner.is_empty() {
         return;
     }
 
     let msg = " [p] Select an image file to preview ";
-    buf.set_string(
+    frame.buffer_mut().set_string(
         inner.x + 1,
         inner.y + 1,
         msg,

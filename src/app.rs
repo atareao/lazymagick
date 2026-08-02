@@ -412,7 +412,7 @@ impl App {
             before_after_info: None,
             show_image_preview: false,
             image_protocol: None,
-            image_picker: Picker::from_query_stdio().ok(),
+            image_picker: Some(Picker::halfblocks()),
             theme: config::ThemeColors::from(&settings.theme),
         }
     }
