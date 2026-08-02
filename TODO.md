@@ -40,8 +40,9 @@
   - Mostrar miniatura vía protocolo Kitty / sixel
   - Killer feature para herramienta de imágenes
 
-- [ ] **Before/after comparison**
-  - Lado a lado original vs resultado procesado
+- [x] **Before/after comparison**
+  - Tecla `b` para ver comparativa lado a lado original vs procesado
+  - Procesa copia temporal, respeta formato, directorio y args extra
 
 - [ ] **EXIF metadata panel**
   - Mostrar metadatos EXIF adicionales (cámara, ISO, fecha, GPS)

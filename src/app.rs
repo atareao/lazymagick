@@ -302,6 +302,12 @@ pub struct App {
     /// Cursor in the undo list.
     pub undo_cursor: usize,
 
+    // -- Before/After comparison -----------------------------------
+    /// Whether the before/after comparison popup is visible.
+    pub show_before_after: bool,
+    /// Comparison info (if any) from a processed file.
+    pub before_after_info: Option<magick::BeforeAfterInfo>,
+
     /// Parsed theme colors for the UI.
     pub theme: config::ThemeColors,
 }
@@ -392,6 +398,8 @@ impl App {
             generated_outputs: Vec::new(),
             show_undo_list: false,
             undo_cursor: 0,
+            show_before_after: false,
+            before_after_info: None,
             theme: config::ThemeColors::from(&settings.theme),
         }
     }
@@ -701,6 +709,11 @@ impl App {
                     self.mode = Mode::Browse;
                     return;
                 }
+                if self.show_before_after {
+                    self.show_before_after = false;
+                    self.before_after_info = None;
+                    return;
+                }
             }
             KeyCode::Tab => {
                 self.focus = self.focus.next();
@@ -757,6 +770,15 @@ impl App {
             KeyCode::Char('u') => {
                 self.show_undo_list = !self.show_undo_list;
                 self.undo_cursor = 0;
+            }
+            KeyCode::Char('b')
+                if self.mode == Mode::Browse
+                    && !self.show_format_picker
+                    && !self.show_edit_popup
+                    && !self.show_undo_list =>
+            {
+                self.toggle_before_after();
+                return;
             }
             _ => {}
         }
@@ -1563,6 +1585,70 @@ impl App {
             timestamp: now,
         };
         self.log_entries.push(entry);
+    }
+
+    /// Toggle the before/after comparison popup.
+    pub fn toggle_before_after(&mut self) {
+        if self.show_before_after {
+            self.show_before_after = false;
+            self.before_after_info = None;
+            return;
+        }
+
+        let file = self.visible_entry_at(self.file_cursor);
+        let Some(ref path) = file else { return };
+        if !path.is_file() || !crate::fs_utils::is_image(path) {
+            self.add_log(
+                "No valid image file selected for comparison".into(),
+                LogLevel::Error,
+            );
+            return;
+        }
+
+        // Build argv from current recipe + format + extra args
+        let recipe_idx = self
+            .selected_recipe_name
+            .as_ref()
+            .and_then(|name| self.recipes.iter().position(|r| r.name == *name));
+        let Some(recipe_idx) = recipe_idx else { return };
+        let recipe = &self.recipes[recipe_idx];
+        let format_override = self.format_override.as_deref();
+
+        let output_path = recipe.output_path(path, format_override);
+        let safe_output = if self.edit_output_dir.is_some() || format_override.is_some() {
+            output_path
+        } else {
+            crate::fs_utils::safe_output_path(
+                path,
+                output_path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .unwrap_or(""),
+                &recipe.name,
+            )
+        };
+        let recipe_args = recipe.resolved_args(format_override);
+        let extra_args: Vec<String> = self
+            .edit_extra_args
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
+        let mut argv =
+            crate::magick::CommandBuilder::build_argv(path, &recipe_args, &[], &safe_output);
+        argv.extend(extra_args);
+
+        match crate::magick::BeforeAfterInfo::new(path, &argv, &safe_output) {
+            Ok(info) => {
+                self.before_after_info = Some(info);
+                self.show_before_after = true;
+            }
+            Err(e) => {
+                self.add_log(
+                    format!("Before/after comparison failed: {e}"),
+                    LogLevel::Error,
+                );
+            }
+        }
     }
 
     // ── Preview ───────────────────────────────────────────────────

@@ -24,6 +24,70 @@ pub struct ImageInfo {
     pub file_size: String,
 }
 
+/// Side-by-side comparison of an original and processed image.
+#[derive(Debug, Clone)]
+pub struct BeforeAfterInfo {
+    /// Metadata of the original (input) image.
+    pub original: ImageInfo,
+    /// Metadata of the processed (output) image.
+    pub processed: ImageInfo,
+}
+
+impl BeforeAfterInfo {
+    /// Run the given argv on a temporary copy of `input` and build a comparison.
+    ///
+    /// Creates a temp directory, copies the file, runs `magick`, identifies
+    /// both the original and the processed output, and returns the comparison.
+    ///
+    /// The `output` parameter is the intended output path — its extension is
+    /// used for the temp output, and its string representation is replaced in
+    /// `argv` so the command writes to the temp location instead.
+    pub fn new(input: &Path, argv: &[String], output: &Path) -> Result<Self, String> {
+        let original = CommandBuilder::identify(input).map_err(|e| e.to_string())?;
+
+        let temp_dir = tempfile::tempdir().map_err(|e| format!("Cannot create temp dir: {e}"))?;
+        let temp_input = temp_dir.path().join(
+            input
+                .file_name()
+                .unwrap_or_else(|| std::ffi::OsStr::new("input")),
+        );
+        std::fs::copy(input, &temp_input).map_err(|e| format!("Cannot copy to temp: {e}"))?;
+
+        // Build temp output path using the same extension as the real output
+        let ext = output.extension().and_then(|e| e.to_str()).unwrap_or("png");
+        let temp_out = temp_dir.path().join("output").with_extension(ext);
+
+        // Replace ALL occurrences of the input and output path strings in argv
+        // with the temp paths — this works regardless of argument order or extra
+        // flags before/after the positional paths.
+        let mut local_argv = argv.to_vec();
+        let input_str = input.to_string_lossy();
+        let output_str = output.to_string_lossy();
+        let temp_input_str = temp_input.to_string_lossy();
+        let temp_out_str = temp_out.to_string_lossy();
+
+        for arg in &mut local_argv {
+            if *arg == input_str.as_ref() {
+                *arg = temp_input_str.to_string();
+            }
+            if *arg == output_str.as_ref() {
+                *arg = temp_out_str.to_string();
+            }
+        }
+
+        // Run magick on the temp copy
+        CommandBuilder::run(&local_argv).map_err(|e| format!("Cannot process: {e}"))?;
+
+        // Identify the processed output
+        let processed = CommandBuilder::identify(&temp_out).map_err(|e| e.to_string())?;
+
+        Ok(BeforeAfterInfo {
+            original,
+            processed,
+        })
+    }
+}
+
 /// Parsed EXIF metadata from `magick identify -verbose`.
 #[derive(Debug, Clone, Default)]
 pub struct ExifInfo {

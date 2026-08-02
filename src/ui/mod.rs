@@ -10,6 +10,7 @@ use ratatui::{
 
 use crate::app::{App, Focus, Mode};
 
+pub mod before_after_popup;
 pub mod command_panel;
 pub mod dir_browser_popup;
 pub mod edit_popup;
@@ -128,6 +129,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         && let Some(ref exif) = app.exif_info
     {
         exif_panel::render(frame.area(), frame.buffer_mut(), exif, &app.theme);
+    }
+
+    if app.show_before_after
+        && let Some(ref info) = app.before_after_info
+    {
+        before_after_popup::render(frame.area(), frame.buffer_mut(), info, &app.theme);
     }
 
     if app.show_help {
