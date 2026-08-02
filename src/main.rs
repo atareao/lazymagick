@@ -8,7 +8,7 @@ pub mod magick;
 pub mod recipe;
 pub mod ui;
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use color_eyre::Result;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -19,6 +19,14 @@ fn main() -> Result<()> {
 
     // Parse CLI arguments
     let cli = cli::Cli::parse();
+
+    // If --completions was provided, generate and print the script, then exit
+    if let Some(shell) = cli.completions {
+        let mut cmd = cli::Cli::command();
+        let name = cmd.get_name().to_string();
+        clap_complete::generate(shell, &mut cmd, name, &mut std::io::stdout());
+        return Ok(());
+    }
 
     // If a recipe is specified, run in headless batch mode
     if cli.recipe.is_some() {
