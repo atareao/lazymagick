@@ -227,6 +227,15 @@ pub struct App {
 
     // -- Edit popup -------------------------------------------------
     /// Whether the edit parameters popup is visible.
+    /// Whether the directory browser popup is open (inside edit mode).
+    pub show_dir_browser: bool,
+    /// Current path being browsed in the directory picker.
+    pub dir_browser_path: PathBuf,
+    /// Cursor position in the directory browser listing.
+    pub dir_browser_cursor: usize,
+    /// Current directory listing for the directory browser.
+    pub dir_browser_listing: Vec<PathBuf>,
+
     pub show_edit_popup: bool,
     /// Output directory override (None = same dir as input).
     pub edit_output_dir: Option<PathBuf>,
@@ -327,6 +336,11 @@ impl App {
 
             show_format_picker: false,
             format_picker_cursor: 0,
+
+            show_dir_browser: false,
+            dir_browser_path: PathBuf::from("/"),
+            dir_browser_cursor: 0,
+            dir_browser_listing: Vec::new(),
 
             show_edit_popup: false,
             edit_output_dir: None,
@@ -493,6 +507,46 @@ impl App {
                 return;
             }
             Mode::Edit => {
+                // If dir browser is open, handle its keys
+                if self.show_dir_browser {
+                    match key.code {
+                        KeyCode::Esc => {
+                            self.show_dir_browser = false;
+                        }
+                        KeyCode::Char('j') | KeyCode::Down => {
+                            self.dir_browser_cursor = self
+                                .dir_browser_cursor
+                                .saturating_add(1)
+                                .min(self.dir_browser_listing.len().saturating_sub(1));
+                        }
+                        KeyCode::Char('k') | KeyCode::Up => {
+                            self.dir_browser_cursor = self.dir_browser_cursor.saturating_sub(1);
+                        }
+                        KeyCode::Enter | KeyCode::Right => {
+                            // Enter subdirectory
+                            self.enter_dir_browser_subdir();
+                        }
+                        KeyCode::Backspace | KeyCode::Left => {
+                            // Go to parent
+                            if let Some(parent) = self.dir_browser_path.parent() {
+                                self.dir_browser_path = parent.to_path_buf();
+                                self.refresh_dir_browser_listing();
+                                self.dir_browser_cursor = 0;
+                            }
+                        }
+                        KeyCode::Char(' ') | KeyCode::Char('s')
+                            if self.dir_browser_path.is_dir() =>
+                        {
+                            // Select the current directory
+                            self.edit_output_buf =
+                                self.dir_browser_path.to_string_lossy().to_string();
+                            self.show_dir_browser = false;
+                        }
+                        _ => {}
+                    }
+                    return;
+                }
+
                 match key.code {
                     KeyCode::Esc => {
                         self.show_edit_popup = false;
@@ -531,6 +585,14 @@ impl App {
                         buf.push(c);
                     }
                     _ => {}
+                }
+
+                // Check for Ctrl+O to open directory browser
+                if key.modifiers == KeyModifiers::CONTROL
+                    && matches!(key.code, KeyCode::Char('o') | KeyCode::Char('O'))
+                    && self.edit_field == EditField::OutputDir
+                {
+                    self.open_dir_browser();
                 }
                 return;
             }
@@ -1337,6 +1399,63 @@ impl App {
         self.edit_field = EditField::OutputDir;
         self.show_edit_popup = true;
         self.mode = Mode::Edit;
+    }
+
+    /// Open the directory browser popup starting from the current output dir.
+    pub fn open_dir_browser(&mut self) {
+        let start = if self.edit_output_buf.is_empty() {
+            PathBuf::from("/")
+        } else {
+            let p = PathBuf::from(&self.edit_output_buf);
+            if p.is_dir() {
+                p
+            } else if let Some(parent) = p.parent() {
+                parent.to_path_buf()
+            } else {
+                PathBuf::from("/")
+            }
+        };
+        self.dir_browser_path = start;
+        self.dir_browser_cursor = 0;
+        self.refresh_dir_browser_listing();
+        self.show_dir_browser = true;
+    }
+
+    /// Refresh the directory listing for the browser.
+    pub fn refresh_dir_browser_listing(&mut self) {
+        self.dir_browser_listing.clear();
+        if let Ok(read_dir) = std::fs::read_dir(&self.dir_browser_path) {
+            for entry in read_dir.flatten() {
+                let path = entry.path();
+                if path.is_dir()
+                    && let Some(name) = path.file_name().and_then(|n| n.to_str())
+                    && !name.starts_with('.')
+                {
+                    self.dir_browser_listing.push(path);
+                }
+            }
+        }
+        self.dir_browser_listing.sort_by_key(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|s| s.to_lowercase())
+        });
+    }
+
+    /// Enter the subdirectory at the current cursor position in the browser.
+    pub fn enter_dir_browser_subdir(&mut self) {
+        if self.dir_browser_listing.is_empty() {
+            return;
+        }
+        let idx = self.dir_browser_cursor;
+        if idx < self.dir_browser_listing.len() {
+            let subdir = self.dir_browser_listing[idx].clone();
+            if subdir.is_dir() {
+                self.dir_browser_path = subdir;
+                self.dir_browser_cursor = 0;
+                self.refresh_dir_browser_listing();
+            }
+        }
     }
 
     // ── Log ───────────────────────────────────────────────────────

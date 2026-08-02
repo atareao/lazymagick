@@ -11,6 +11,7 @@ use ratatui::{
 use crate::app::{App, Focus, Mode};
 
 pub mod command_panel;
+pub mod dir_browser_popup;
 pub mod edit_popup;
 pub mod file_panel;
 pub mod format_picker;
@@ -101,6 +102,16 @@ pub fn render(frame: &mut Frame, app: &App) {
             edit_field: app.edit_field,
         };
         frame.render_widget(&edit, frame.area());
+
+        // Directory browser overlay (on top of edit popup)
+        if app.show_dir_browser {
+            dir_browser_popup::render(
+                frame.area(),
+                frame.buffer_mut(),
+                &app.dir_browser_path,
+                app.dir_browser_cursor,
+            );
+        }
     }
 
     if app.show_help {
